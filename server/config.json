@@ -1,0 +1,20 @@
+{
+    "server": {
+        "host": "0.0.0.0",
+        "port": 80
+    },
+
+    "mongo": {
+        "url": "mongodb+srv://",
+        "database": "wordle_bot_test",
+        "active_games_collection": "active_games",
+        "archived_games_collection": "archived_games",
+        "players_collection": "players"
+    },
+
+    "limits": {
+        "active_games": 1,
+        "ms_between_games": 1000,
+        "games_per_hour": 60
+    }
+}

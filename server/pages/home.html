@@ -1,0 +1,84 @@
+<link rel="stylesheet" href="retro_modified.css">
+
+<h1 id="about">About</h1>
+<p>This is <a href="https://www.powerlanguage.co.uk/wordle/">Wordle</a> but built for bots to compete against each other.</p>
+<h1 id="how-to-play">How To Play</h1>
+<p>If a server is already set up, these are instructions on how to play. All actions are performed through an HTTP GET request to the server at <code>http://[HOST]:[PORT]</code> with the syntax <code>http://[HOST]:[PORT]/[PATH]?[QUERY]</code></p>
+<h3 id="registering-a-new-player-or-bot">Registering a new player (or bot)</h3>
+<p>Registration of a new player requires an GET request to the path <code>/register</code> with a <code>player_name</code> chosen by the player and <code>registration_key</code> set by the server filled out in the <code>?query</code> component. The server will respond with with a JSON object of the player&#39;s data.</p>
+<p>The <code>scores</code> and <code>score_times</code> arrays will be filled with the scores and the Unix timestamps, respectively, of games as they are played. The <code>active</code> status will be set to <code>true</code> when the first game has been played.</p>
+<p>Here is an example request to register a player with the <code>player_name=quoc</code> and <code>registration_key=1234</code>:</p>
+<p>REQUEST: </p>
+<pre><code>http://[HOST]:[PORT]/register?player_name=quoc&amp;registration_key=1234
+</code></pre>
+<p>RESPONSE: </p>
+<pre><code>{
+    &quot;time_registered&quot;:1643677248826,
+    &quot;player_id&quot;:-1319687248,
+    &quot;registration_key&quot;:1234,
+    &quot;player_name&quot;:&quot;quoc&quot;,
+    &quot;scores&quot;:[],
+    &quot;score_times&quot;:[],
+    &quot;active&quot;:false
+}
+</code></pre>
+<h3 id="starting-a-new-wordle-game">Starting a new Wordle game</h3>
+<p>To start a new game make GET request to the path <code>/start</code> with your <code>player_id</code>. The server will respond with the game&#39;s JSON object. </p>
+<p>The <code>game_token</code> will be used to make future guesses. The <code>guesses</code>, <code>feedback</code>, and <code>guess_times</code> arrays will be filled with the guesses made, the Wordle feedback, and the Unix timestamps, respectively, of guesses as they are made. The <code>won</code> or <code>forfeit</code> status will be set to <code>true</code> when the game has either been won or forfeited.</p>
+<p>Here is an example request for the previously registered player to start a new game with <code>player_id=-1319687248</code>:</p>
+<p>REQUEST: </p>
+<pre><code>http://[HOST]:[PORT]/start?player_id=-1319687248
+</code></pre>
+<p>RESPONSE: </p>
+<pre><code>{
+    &quot;time_started&quot;:1643677266357,
+    &quot;player_id&quot;:-1319687248&quot;,
+    &quot;game_token&quot;:812232609&quot;,
+    &quot;guesses&quot;:[],
+    &quot;feedback&quot;:[],
+    &quot;guess_times&quot;:[],
+    &quot;won&quot;:false,
+    &quot;forfeit&quot;:false
+}
+</code></pre>
+<h3 id="making-a-guess">Making a guess</h3>
+<p>A guess for a particular game is made as a GET request to the path <code>/guess</code> with the <code>game_token</code> and <code>guess</code>. The server will respond with a JSON object of the game&#39;s current state including an array in <code>feedback</code> with the Wordle feedback of the guess. </p>
+<p>In this array, a <code>2</code> corresponds to a green square or the letter being in the word and in the right position, a <code>1</code> corresponds to a yellow square or the letter being in the word but in the wrong spot, and a <code>0</code> corresponds to a gray square or the letter not being in the word at all (for words with double letters, I implemented the same feedback rules as the original Wordle game according to <a href="https://nerdschalk.com/wordle-same-letter-twice-rules-explained-how-does-it-work/">this website</a>).</p>
+<p>Here is an example request to guess the word &quot;grace&quot; on the previously created game with <code>game_token=812232609</code> and <code>guess=grace</code> :</p>
+<p>REQUEST: </p>
+<pre><code>http://[HOST]:[PORT]/guess?game_token=812232609&amp;guess=grace
+</code></pre>
+<p>RESPONSE: </p>
+<pre><code>{
+    &quot;time_started&quot;:1643677266357,
+    &quot;player_id&quot;:-1319687248&quot;,
+    &quot;game_token&quot;:812232609&quot;,
+    &quot;guesses&quot;:[&quot;grace&quot;],
+    &quot;feedback&quot;:[
+        [2,1,0,0,0]
+    ],
+    &quot;guess_times&quot;:[1643677269940],
+    &quot;won&quot;:false,
+    &quot;forfeit&quot;:false
+}
+</code></pre>
+<p>If the game has been won, the server will respond with the game object, with the last guess accounted for in the <code>guesses</code>, <code>feedback</code>, and <code>guess_times</code> arrays. The solution will be revealed in the <code>word</code> attribute and the <code>won</code> attribute will be set to <code>true</code>. The game&#39;s score will be saved and the game will no longer be accessible.</p>
+<p>REQUEST: </p>
+<pre><code>http://[HOST]:[PORT]/guess?game_token=812232609&amp;guess=gourd
+</code></pre>
+<p>RESPONSE: </p>
+<pre><code>{
+    &quot;word&quot;:&quot;gourd&quot;,
+    &quot;time_started&quot;:1643677266357,
+    &quot;player_id&quot;:-1319687248&quot;,
+    &quot;game_token&quot;:812232609&quot;,
+    &quot;guesses&quot;:[&quot;grace&quot;, &quot;gourd&quot;],
+    &quot;feedback&quot;:[
+        [2,1,0,0,0],
+        [2,2,2,2,2]
+    ],
+    &quot;guess_times&quot;:[1643677269940, 1643677270917],
+    &quot;won&quot;:true,
+    &quot;forfeit&quot;:false
+}
+</code></pre>
