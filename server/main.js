@@ -61,7 +61,7 @@ app.get("/leaderboard_data", function (req, res) {
 });
 
 // HTTP GET for registering a player
-app.get("/register", function (req, res) {
+app.get("/api/register", function (req, res) {
     const registration_key = req.query.registration_key;
     const player_name = req.query.player_name;
 
@@ -80,8 +80,25 @@ app.get("/register", function (req, res) {
     });
 });
 
+// HTTP GET for starting a new game
+app.get("/api/start", function (req, res) {
+    const player_id = req.query.player_id;
+
+    // TODO confirm player is allowed to start a new game
+
+    let new_game = new Game(player_id);
+    // send back the cleaned new game object without the solution
+    games_database.create_game(new_game).then(function() {
+        console.log(new_game);
+        let cleaned_game_object = new_game;
+        delete cleaned_game_object._id;
+        delete cleaned_game_object.word;
+        res.send(cleaned_game_object);
+    });
+});
+
 // HTTP GET for guessing a word
-app.get("/guess", function (req, res) {
+app.get("/api/guess", function (req, res) {
     const game_token = Number(req.query.game_token);
     const guess = req.query.guess;
     games_database.find_game(game_token).then(function(this_game) {
@@ -103,7 +120,9 @@ app.get("/guess", function (req, res) {
                     delete cleaned_game_object._id;
                     res.send(cleaned_game_object);
                 })
-            } else { // keep guessing: save, then send back the cleaned game object without the solution
+
+            // keep guessing: save, then send back the cleaned game object without the solution
+            } else {
                 games_database.save_game(this_game).then(function () {
                     let cleaned_game_object = this_game;
                     delete cleaned_game_object._id;
@@ -116,7 +135,7 @@ app.get("/guess", function (req, res) {
 });
 
 // HTTP GET for forfeiting a game
-app.get("/forfeit", function (req, res) {
+app.get("/api/forfeit", function (req, res) {
     const game_token = Number(req.query.game_token);
     games_database.find_game(game_token).then(function(this_game) {
         this_game.forfeit = true;
@@ -130,23 +149,6 @@ app.get("/forfeit", function (req, res) {
             delete cleaned_game_object._id;
             res.send(cleaned_game_object);
         });
-    });
-});
-
-// HTTP GET for starting a new game
-app.get("/start", function (req, res) {
-    const player_id = req.query.player_id;
-
-    // TODO confirm player is allowed to start a new game
-
-    let new_game = new Game(player_id);
-    // send back the cleaned new game object without the solution
-    games_database.create_game(new_game).then(function() {
-        console.log(new_game);
-        let cleaned_game_object = new_game;
-        delete cleaned_game_object._id;
-        delete cleaned_game_object.word;
-        res.send(cleaned_game_object);
     });
 });
 
