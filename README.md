@@ -67,6 +67,8 @@ RESPONSE:
 
 A guess for a particular game is made as a GET request to the path `/api/guess` with the `game_token` and `guess`. The server will respond with a JSON object of the game's current state including an array in `feedback` with the Wordle feedback of the guess. 
 
+The list of valid solutions are in `/server/valid_solutions.csv` and the list of valid words to guess are in `/server/valid_guesses.csv`. Keep in mind that the two lists of words do not intersect. You are allowed to guess words from both lists but only words in the valid solutions list will be solutions. Don't try to guess a word that's not in either list -- I don't know how the API will respond.
+
 In this array, a `2` corresponds to a green square or the letter being in the word and in the right position, a `1` corresponds to a yellow square or the letter being in the word but in the wrong spot, and a `0` corresponds to a gray square or the letter not being in the word at all (for words with double letters, I implemented the same feedback rules as the original Wordle game according to [this website](https://nerdschalk.com/wordle-same-letter-twice-rules-explained-how-does-it-work/)).
 
 Here is an example request to guess the word "grace" on the previously created game with `game_token=812232609` and `guess=grace` :
