@@ -25,18 +25,21 @@ function generateTable(table, data) {
 
 fetch('./leaderboard_data').then(function(response) {
   response.json().then(function(res) {
-    let res_with_date = [];
+    let new_res = [];
     res.forEach(function(row) { // edit and process the Scores object
       let new_row = row;
+
       const time_registered_date = new Date(row.time_registered);
-      console.log(time_registered_date);
       new_row.time_registered = (months[time_registered_date.getMonth()] + " " + time_registered_date.getDate())
-      res_with_date.push(new_row);
+
+      new_row.mean_score = Math.round(new_row.mean_score * 1000)/1000
+
+      new_res.push(new_row);
     });
     let table = document.querySelector("table");
-    let row_headers = Object.keys(res_with_date[0]);
+    let row_headers = Object.keys(new_res[0]);
     row_headers = ["Player", "Avg. Guesses", "Games Played", "Date Joined"]
-    generateTable(table, res_with_date);
+    generateTable(table, new_res);
     generateTableHead(table, row_headers);
   });
 });

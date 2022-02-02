@@ -64,7 +64,7 @@ app.get("/leaderboard_data", function (req, res) {
 app.get("/api/register", function (req, res) {
     const registration_key = req.query.registration_key;
     const player_name = req.query.player_name;
-
+    
     // TODO CHECK REGISTRATION KEY
 
     let new_player = new Player(player_name, registration_key);
