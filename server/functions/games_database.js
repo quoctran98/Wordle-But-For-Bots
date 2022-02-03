@@ -79,5 +79,43 @@ module.exports = {
                 });
             });
         });
-    }
+    },
+
+    /**
+     * Find all games currently in progress for a player.
+     * @param {number} player_id 
+     * @returns {Array} an array of Game objects
+     */
+     search_active_games: async function(player_id) {
+        return new Promise((resolve) => {
+            mongoClient.connect(config.mongo.url, {useUnifiedTopology: true}, function (err, db) {
+                if (err) {throw err;}
+                const dbo = db.db(config.mongo.database);
+                dbo.collection(config.mongo.active_games_collection).find({player_id: player_id}).toArray(function(err, all_games) {
+                    if (err) {throw err;}
+                    db.close();
+                    resolve(all_games);
+                });
+            });
+        });
+    },
+
+    /**
+     * Find all archived games for a player.
+     * @param {number} player_id 
+     * @returns {Array} an array of Game objects
+     */
+     search_archived_games: async function(player_id) {
+        return new Promise((resolve) => {
+            mongoClient.connect(config.mongo.url, {useUnifiedTopology: true}, function (err, db) {
+                if (err) {throw err;}
+                const dbo = db.db(config.mongo.database);
+                dbo.collection(config.mongo.archived_games_collection).find({player_id: player_id}).toArray(function(err, all_games) {
+                    if (err) {throw err;}
+                    db.close();
+                    resolve(all_games);
+                });
+            });
+        });
+    },
 }

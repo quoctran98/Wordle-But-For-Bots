@@ -27,7 +27,6 @@ module.exports = {
                     if (err) {throw err;}
                     player_info.scores.push(score);
                     player_info.score_times.push(Date.now());
-                    player_info.active = true; // players become or stay active when they complete a game
 
                     dbo.collection(config.mongo.players_collection).replaceOne({player_id: player_id}, player_info)
                     .then(function () {
@@ -55,7 +54,7 @@ module.exports = {
                     active_players.forEach(function(this_player) {
                         active_player_scores.push({
                             "player_name": this_player.player_name,
-                            "mean_score": functions.array_mean(this_player.scores),
+                            "mean_score": ((this_player.scores.length == 0) ? NaN : functions.array_mean(this_player.scores)),
                             "games_played": this_player.scores.length,
                             "time_registered": this_player.time_registered
                         })

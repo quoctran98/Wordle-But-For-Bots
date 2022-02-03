@@ -1,3 +1,6 @@
+const games_database = require('./functions/games_database.js');
+const players_database = require('./functions/players_database.js');
+
 global.fs = require('fs');
 global.express = require("express");
 global.mongoClient = require('mongodb').MongoClient;
@@ -5,6 +8,7 @@ global.mongoClient = require('mongodb').MongoClient;
 global.functions = require("./functions/functions.js");
 global.wordle = require("./functions/wordle.js");
 global.games_database = require("./functions/games_database.js");
+global.players_database = require("./functions/players_database.js");
 global.score = require("./functions/score.js");
 
 global.app = express();
@@ -17,7 +21,7 @@ class Player {
         this.player_name = player_name,
         this.scores = [],
         this.score_times = [],
-        this.active = false // player is active once they play their first game
+        this.active = true
     }
 }
 
@@ -66,17 +70,14 @@ app.get("/api/register", function (req, res) {
     const player_name = req.query.player_name;
     
     // TODO CHECK REGISTRATION KEY
-
-    let new_player = new Player(player_name, registration_key);
-    mongoClient.connect(config.mongo.url, {useUnifiedTopology: true}, function (err, db) {
-        if (err) {throw err;}
-        const dbo = db.db(config.mongo.database);
-        dbo.collection(config.mongo.players_collection).insertOne(new_player, function(err, mongo_result) {
-            if (err) {throw err;}
-            db.close();
-            console.log(new_player);
-            res.send(new_player);
-        });
+    players_database.check_registration_key(registration_key)
+    .then(function (is_allowed) {
+        if (is_allowed) {
+            players_database.register_player(new Player(player_name, registration_key))
+            .then(new_player => res.send(new_player));
+        } else {
+            res.send(false);
+        }                 
     });
 });
 
@@ -85,6 +86,7 @@ app.get("/api/start", function (req, res) {
     const player_id = req.query.player_id;
 
     // TODO confirm player is allowed to start a new game
+    // must exist and be active (maybe limits?)
 
     let new_game = new Game(player_id);
     // send back the cleaned new game object without the solution
@@ -134,6 +136,43 @@ app.get("/api/guess", function (req, res) {
     });
 });
 
+// HTTP GET for finding archived games of a player
+app.get("/api/find_all_archived_games", function (req, res) {
+    const player_id = Number(req.query.player_id);
+    games_database.search_archived_games(player_id)
+    .then(function (all_games) {
+        res.send(all_games);
+    });
+});
+
+// HTTP GET for finding active games of a player
+app.get("/api/find_all_active_games", function (req, res) {
+    const player_id = Number(req.query.player_id);
+    games_database.search_active_games(player_id)
+    .then(function (all_games) {
+        all_cleaned_games = [];
+        all_games.forEach(function (this_game) { // we have to clean these objects for active games
+            delete this_game._id;
+            delete this_game.word
+            all_cleaned_games.append(this_game)
+        });
+        res.send(all_cleaned_games);
+    });
+});
+
+// HTTP GET for getting active game info without making a guess
+app.get("/api/find_active_game", function (req, res) {
+    const game_token = Number(req.query.game_token);
+    games_database.find_game(game_token)
+    .then(function(this_game) {
+        let cleaned_game_object = this_game;
+        delete cleaned_game_object._id;
+        delete cleaned_game_object.word;
+        res.send(cleaned_game_object);
+    });
+});
+
+
 // HTTP GET for forfeiting a game
 app.get("/api/forfeit", function (req, res) {
     const game_token = Number(req.query.game_token);
@@ -152,6 +191,21 @@ app.get("/api/forfeit", function (req, res) {
     });
 });
 
+// HTTP GET for deactivating a player
+app.get("/api/deactivate", function (req, res) {
+    const player_id = Number(req.query.player_id);
+    players_database.deactivate(player_id)
+    .then(this_player => res.send(this_player));
+});
+
+
+// HTTP GET for deactivating a player
+app.get("/api/reactivate", function (req, res) {
+    const player_id = Number(req.query.player_id);
+    players_database.reactivate(player_id)
+    .then(this_player => res.send(this_player));
+});
+
 // importing config and word lists
 global.config = fs.readFileSync("./config.json");
 config = JSON.parse(config);
@@ -168,3 +222,5 @@ valid_guesses = valid_guesses.concat(valid_solutions);
 
 app.listen(config.server.port);
 //app.listen(config.server.port, config.server.host);
+
+players_database.check_registration_key("1234").then(x => console.log(x));

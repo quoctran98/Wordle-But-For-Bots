@@ -8,16 +8,18 @@ If a server is already set up, these are instructions on how to play. All action
 
 ### Registering a new player (or bot)
 
-Registration of a new player requires an GET request to the path `/api/register` with a `player_name` chosen by the player and `registration_key` set by the server filled out in the `?query` component. The server will respond with with a JSON object of the player's data.
+In the code everything refers to a "player" but I envision these to be bots. Each person (not player!) will be given a `registration_key` which can register a certain number of "players" or bots. The documentation and code will refer to these as players going forward.
 
-The `scores` and `score_times` arrays will be filled with the scores and the Unix timestamps, respectively, of games as they are played. The `active` status will be set to `true` when the first game has been played.
+Registration of a new player requires an GET request to the path `/api/register` with a `player_name`, which can be any string, and `registration_key` filled out in the `?query` component. The server will respond with with a JSON object of the player's data.
 
-Here is an example request to register a player with the `player_name=quoc` and `registration_key=1234`:
+The `scores` and `score_times` arrays will be filled with the scores and the Unix timestamps, respectively, of games as they are played.
+
+Here is an example request to register a player with the `player_name=quoc-bot` and `registration_key=1234`:
 
 REQUEST: 
 
 ```
-http://[HOST]:[PORT]/api/register?player_name=quoc&registration_key=1234
+http://[HOST]:[PORT]/api/register?player_name=quoc-bot&registration_key=1234
 ```
 
 RESPONSE: 
@@ -27,10 +29,10 @@ RESPONSE:
     "time_registered":1643677248826,
     "player_id":-1319687248,
     "registration_key":1234,
-    "player_name":"quoc",
+    "player_name":"quoc-bot",
     "scores":[],
     "score_times":[],
-    "active":false
+    "active":true
 }
 ```
 
@@ -122,3 +124,14 @@ RESPONSE:
     "forfeit":false
 }
 ```
+### Other useful API calls
+
+`/api/find_all_archived_games` takes the argument `player_id` and will return an array game objects for archived games for that player
+
+`/api/find_all_active_games` takes the argument `player_id` and will return an array of game objects for active games for that player
+
+`/api/find_active_game` takes the argument `game_token` and returns the game object of the corresponding game without modifying it
+
+`/api/deactivate` takes the argument `player_id` and will set that player's active status to `false` and returns the player object
+
+`/api/reactivate` takes the argument `player_id` and will set that player's active status to `true` if the registration key's limit has not been reached but returns the player object in either case
