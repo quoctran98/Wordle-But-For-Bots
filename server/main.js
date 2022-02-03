@@ -2,6 +2,7 @@ const games_database = require('./functions/games_database.js');
 const players_database = require('./functions/players_database.js');
 
 global.fs = require('fs');
+global.path = require('path');
 global.express = require("express");
 global.mongoClient = require('mongodb').MongoClient;
 
@@ -39,25 +40,11 @@ class Game {
     }
 }
 
-// Serving the HTML landing page
-app.get("/", function (req, res) {
-    res.sendFile(__dirname + "/pages/" + "home.html");
-});
-app.get('/retro_modified.css', function(req, res) {
-    res.sendFile(__dirname + "/pages/" + "retro_modified.css");
-});
+// serve the entire pages folder (html and js) as the home page
+app.use('', express.static(path.join(__dirname, 'pages')));
 
-
-// Serving the HTML leaderboard page
-app.get("/leaderboard", function (req, res) {
-    res.sendFile(__dirname + "/pages/" + "leaderboard.html");
-});
-app.get('/leaderboard.js', function(req, res) {
-    res.sendFile(__dirname + "/pages/" + "leaderboard.js");
-});
-
-// Serving the data the populate the leaderboard page
-app.get("/leaderboard_data", function (req, res) {
+// leaderboard data for html
+app.get("/data/leaderboard", function (req, res) {
     score.compile_scores()
     .then(function(leaderboard) {
         res.send(leaderboard);
@@ -222,5 +209,3 @@ valid_guesses = valid_guesses.concat(valid_solutions);
 
 app.listen(config.server.port);
 //app.listen(config.server.port, config.server.host);
-
-players_database.check_registration_key("1234").then(x => console.log(x));

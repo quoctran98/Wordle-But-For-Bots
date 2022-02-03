@@ -23,7 +23,7 @@ function generateTable(table, data) {
     }
 }
 
-fetch('./leaderboard_data').then(function(response) {
+fetch('../data/leaderboard').then(function(response) {
   response.json().then(function(res) {
     let new_res = [];
     res.forEach(function(row) { // edit and process the Scores object
