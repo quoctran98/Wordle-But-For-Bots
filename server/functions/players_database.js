@@ -17,7 +17,12 @@ module.exports = {
                         dbo.collection(config.mongo.players_collection).find({registration_key: registration_key, active: true}).toArray(function(err, all_players) {
                             if (err) {throw err;}
                             db.close();
-                            resolve(all_players.length < this_key.limit);
+
+                            if (this_key.limit == 0) {
+                                resolve(true);
+                            } else {
+                                resolve(all_players.length < this_key.limit);
+                            }
                         });
                     }
                 });

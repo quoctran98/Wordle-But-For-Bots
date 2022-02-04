@@ -1,11 +1,9 @@
-const games_database = require('./functions/games_database.js');
-const players_database = require('./functions/players_database.js');
-
 global.fs = require('fs');
 global.path = require('path');
 global.express = require("express");
 global.mongoClient = require('mongodb').MongoClient;
 
+global.admin = require("./functions/admin.js");
 global.functions = require("./functions/functions.js");
 global.wordle = require("./functions/wordle.js");
 global.games_database = require("./functions/games_database.js");
@@ -56,14 +54,13 @@ app.get("/api/register", function (req, res) {
     const registration_key = req.query.registration_key;
     const player_name = req.query.player_name;
     
-    // TODO CHECK REGISTRATION KEY
     players_database.check_registration_key(registration_key)
     .then(function (is_allowed) {
         if (is_allowed) {
             players_database.register_player(new Player(player_name, registration_key))
             .then(new_player => res.send(new_player));
         } else {
-            res.send(false);
+            res.send("registration_key does not exist or has too many bots");
         }                 
     });
 });
@@ -78,7 +75,6 @@ app.get("/api/start", function (req, res) {
     let new_game = new Game(player_id);
     // send back the cleaned new game object without the solution
     games_database.create_game(new_game).then(function() {
-        console.log(new_game);
         let cleaned_game_object = new_game;
         delete cleaned_game_object._id;
         delete cleaned_game_object.word;
@@ -194,7 +190,7 @@ app.get("/api/reactivate", function (req, res) {
 });
 
 // importing config and word lists
-global.config = fs.readFileSync("./config.json");
+global.config = fs.readFileSync(path.join(__dirname, "config.json"));
 config = JSON.parse(config);
 
 global.valid_guesses = fs.readFileSync("valid_guesses.csv", "utf8");
@@ -205,7 +201,11 @@ valid_solutions = valid_solutions.split(/\r?\n/);
 valid_solutions = valid_solutions.slice(1);
 
 // original valid_guesses list are allowed guesses that aren't solutions
+// the two sets dont intersect
 valid_guesses = valid_guesses.concat(valid_solutions);
 
-app.listen(config.server.port);
-//app.listen(config.server.port, config.server.host);
+app.listen(process.env.PORT || 5000);
+
+// use these lines when not deploying with heroku
+//app.listen(config.server.port); // for local
+//app.listen(config.server.port, config.server.host); // for public
