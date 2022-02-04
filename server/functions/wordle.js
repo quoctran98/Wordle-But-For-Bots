@@ -4,7 +4,7 @@ module.exports = {
      * @param {number} guess player's guess
      * @param {string} word word to guess
      * @param {Array} valid_guesses valid words to guess
-     * @returns {Array} 
+     * @returns {Array} retruns empty array when guess is invalid
      */
     process_guess: function (guess, word, valid_guesses) {
         if (valid_guesses.indexOf(guess) == -1) { 

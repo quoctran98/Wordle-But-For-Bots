@@ -60,8 +60,8 @@ module.exports = {
             mongoClient.connect(config.mongo.url, {useUnifiedTopology: true}, function (err, db) {
                 if (err) {throw err;}
                 const dbo = db.db(config.mongo.database);
-                dbo.collection(config.mongo.players_collection).findOne({player_id: player_id}).
-                then(function (this_player) {
+                dbo.collection(config.mongo.players_collection).findOne({player_id: player_id})
+                .then(function (this_player) {
                     this_player.active = false;
                     dbo.collection(config.mongo.players_collection).replaceOne({player_id: player_id}, this_player)
                     .then(function () {
@@ -83,8 +83,8 @@ module.exports = {
             mongoClient.connect(config.mongo.url, {useUnifiedTopology: true}, function (err, db) {
                 if (err) {throw err;}
                 const dbo = db.db(config.mongo.database);
-                dbo.collection(config.mongo.players_collection).findOne({player_id: player_id}).
-                then(function (this_player) {
+                dbo.collection(config.mongo.players_collection).findOne({player_id: player_id})
+                .then(function (this_player) {
                     players_database.check_registration_key(this_player.registration_key)
                     .then(function (is_allowed) {
                         if (is_allowed) {
@@ -101,5 +101,40 @@ module.exports = {
                 });
             });
         });
-    }
+    },
+
+    /**
+     * Check if a player is allowed to start a new game
+     * @param {number} player_id 
+     * @returns {boolean}
+     */
+     check_new_game: async function(player_id) {
+        return new Promise((resolve) => {
+            mongoClient.connect(config.mongo.url, {useUnifiedTopology: true}, function (err, db) {
+                if (err) {throw err;}
+
+                const dbo = db.db(config.mongo.database);
+                dbo.collection(config.mongo.players_collection).findOne({player_id: player_id})
+                .then(function (this_player) {
+                    if (err) {throw err;}
+                    if (this_player === null) { // player does not exist
+                        db.close();
+                        resolve(false);
+
+                    } else if (this_player.active) { // player is active
+                        // checking to active game limits
+                        dbo.collection(config.mongo.active_games_collection).find({player_id: player_id}).toArray(function(err, all_games) {
+                            if (err) {throw err;}
+                            db.close();
+                            resolve(all_games.length < config.limits.active_games);
+                        });
+
+                    } else { // player_id not real or inavtive
+                        db.close();
+                        resolve(false);
+                    }
+                });
+            });
+        });
+     }
 }

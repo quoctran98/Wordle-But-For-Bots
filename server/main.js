@@ -38,6 +38,25 @@ class Game {
     }
 }
 
+const error_messages = {
+    0: "It's all good :)",
+    1: "Something went wrong and I don't know what",
+    2: "Insufficient parameters supplied in API request",
+    3: "Invalid registration: registration_key does not exist or has too many registered players",
+    4: "Invalid guess: word is not in either valid_guesses.csv or valid_solutions.csv",
+    5: "Cannot start a new game: player_id does not exist, is not active, or has too many active games"
+}
+
+class Error {
+    constructor(error_code, request) {
+        this.error = true,
+        this.code = error_code,
+        this.message = error_messages[error_code],
+        this.request_path = request.path,
+        this.request_query = request.query
+    }
+}
+
 // serve the entire pages folder (html and js) as the home page
 app.use('', express.static(path.join(__dirname, 'pages')));
 
@@ -49,10 +68,24 @@ app.get("/data/leaderboard", function (req, res) {
     });
 });
 
+// individual player data for html
+app.get("/data/player", function (req, res) {
+    const player_id = req.query.player_id;
+    
+    score.compile_scores()
+    .then(function(leaderboard) {
+        res.send(leaderboard);
+    });
+});
+
 // HTTP GET for registering a player
 app.get("/api/register", function (req, res) {
     const registration_key = req.query.registration_key;
     const player_name = req.query.player_name;
+    if (registration_key == null || player_name == null) {
+        res.send(new Error(2, req));
+        return;
+    }
     
     players_database.check_registration_key(registration_key)
     .then(function (is_allowed) {
@@ -60,38 +93,57 @@ app.get("/api/register", function (req, res) {
             players_database.register_player(new Player(player_name, registration_key))
             .then(new_player => res.send(new_player));
         } else {
-            res.send("registration_key does not exist or has too many bots");
-        }                 
+            res.send(new Error(3, req));
+        } 
     });
 });
 
 // HTTP GET for starting a new game
 app.get("/api/start", function (req, res) {
-    const player_id = req.query.player_id;
+    const player_id = Number(req.query.player_id);
+    if (player_id == null) {
+        res.send(new Error(2, req));
+        return;
+    }
 
-    // TODO confirm player is allowed to start a new game
-    // must exist and be active (maybe limits?)
+    // confirm player is allowed to start a new game
+    players_database.check_new_game(player_id).then(function (is_allowed) {
+        if (!is_allowed) {
+            res.send(new Error(5, req));
+            return;
+        }
 
-    let new_game = new Game(player_id);
-    // send back the cleaned new game object without the solution
-    games_database.create_game(new_game).then(function() {
-        let cleaned_game_object = new_game;
-        delete cleaned_game_object._id;
-        delete cleaned_game_object.word;
-        res.send(cleaned_game_object);
-    });
+        let new_game = new Game(player_id);
+        // send back the cleaned new game object without the solution
+        games_database.create_game(new_game).then(function() {
+            let cleaned_game_object = new_game;
+            delete cleaned_game_object._id;
+            delete cleaned_game_object.word;
+            res.send(cleaned_game_object);
+        });
+    })
 });
 
 // HTTP GET for guessing a word
 app.get("/api/guess", function (req, res) {
     const game_token = Number(req.query.game_token);
     const guess = req.query.guess;
+    if (game_token == null || guess == null) {
+        res.send(new Error(2, req));
+        return;
+    }
+
     games_database.find_game(game_token).then(function(this_game) {
         if (this_game.won || this_game.forfeit) { // already won or forfeit
             res.send(false);
         } else {
             // process the game object with guess feedback 
-            let wordle_feedback = wordle.process_guess(guess, this_game.word, valid_guesses)
+            let wordle_feedback = wordle.process_guess(guess, this_game.word, valid_guesses);
+            if (wordle_feedback.length == 0) {
+                res.send(new Error(4, req));
+                return;
+            }
+            
             this_game.guesses.push(guess);
             this_game.guess_times.push(Date.now());
             this_game.feedback.push(wordle_feedback);
@@ -122,6 +174,11 @@ app.get("/api/guess", function (req, res) {
 // HTTP GET for finding archived games of a player
 app.get("/api/find_all_archived_games", function (req, res) {
     const player_id = Number(req.query.player_id);
+    if (player_id == null) {
+        res.send(new Error(2, req));
+        return;
+    }
+
     games_database.search_archived_games(player_id)
     .then(function (all_games) {
         res.send(all_games);
@@ -131,6 +188,11 @@ app.get("/api/find_all_archived_games", function (req, res) {
 // HTTP GET for finding active games of a player
 app.get("/api/find_all_active_games", function (req, res) {
     const player_id = Number(req.query.player_id);
+    if (player_id == null) {
+        res.send(new Error(2, req));
+        return;
+    }
+
     games_database.search_active_games(player_id)
     .then(function (all_games) {
         all_cleaned_games = [];
@@ -146,6 +208,11 @@ app.get("/api/find_all_active_games", function (req, res) {
 // HTTP GET for getting active game info without making a guess
 app.get("/api/find_active_game", function (req, res) {
     const game_token = Number(req.query.game_token);
+    if (game_token == null) {
+        res.send(new Error(2, req));
+        return;
+    }
+
     games_database.find_game(game_token)
     .then(function(this_game) {
         let cleaned_game_object = this_game;
@@ -159,6 +226,11 @@ app.get("/api/find_active_game", function (req, res) {
 // HTTP GET for forfeiting a game
 app.get("/api/forfeit", function (req, res) {
     const game_token = Number(req.query.game_token);
+    if (game_token == null) {
+        res.send(new Error(2, req));
+        return;
+    }
+
     games_database.find_game(game_token).then(function(this_game) {
         this_game.forfeit = true;
         this_game.guesses.push(""); // store the time of the forfeit
@@ -177,6 +249,11 @@ app.get("/api/forfeit", function (req, res) {
 // HTTP GET for deactivating a player
 app.get("/api/deactivate", function (req, res) {
     const player_id = Number(req.query.player_id);
+    if (player_id == null) {
+        res.send(new Error(2, req));
+        return;
+    }
+
     players_database.deactivate(player_id)
     .then(this_player => res.send(this_player));
 });
@@ -185,6 +262,11 @@ app.get("/api/deactivate", function (req, res) {
 // HTTP GET for deactivating a player
 app.get("/api/reactivate", function (req, res) {
     const player_id = Number(req.query.player_id);
+    if (player_id == null) {
+        res.send(new Error(2, req));
+        return;
+    }
+
     players_database.reactivate(player_id)
     .then(this_player => res.send(this_player));
 });
@@ -204,8 +286,8 @@ valid_solutions = valid_solutions.slice(1);
 // the two sets dont intersect
 valid_guesses = valid_guesses.concat(valid_solutions);
 
-app.listen(process.env.PORT || 5000);
+//app.listen(process.env.PORT || 5000);
 
 // use these lines when not deploying with heroku
-//app.listen(config.server.port); // for local
-//app.listen(config.server.port, config.server.host); // for public
+app.listen(4431); // for local
+//app.listen(config.server.port, config.server.host); // for public hosting
