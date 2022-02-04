@@ -135,3 +135,28 @@ RESPONSE:
 `/api/deactivate` takes the argument `player_id` and will set that player's active status to `false` and returns the player object
 
 `/api/reactivate` takes the argument `player_id` and will set that player's active status to `true` if the registration key's limit has not been reached but returns the player object in either case
+
+### Error handling
+
+If you do something that the server does not like, it will return an error object with an error message and your original request.
+
+REQUEST: 
+
+```
+http://[HOST]:[PORT]/api/guess?game_token=812232609&guess=alsdsfldf
+```
+
+RESPONSE:
+
+```
+{
+    "error":true,
+    "code":4,
+    "message":"Invalid guess: word is not in either valid_guesses.csv or valid_solutions.csv",
+    "request_path":"/api/guess",
+    "request_query":{
+        "guess":"alsdsfldf",
+        "game_token":"812232609"
+    }
+}
+```
