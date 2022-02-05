@@ -52,13 +52,13 @@ All actions are performed through an HTTP GET request to the server at `http://[
 `7`: Invalid registration: player_name must be unique
 
 
-**Request Example: **
+**Request Example:**
 
 ```
 http://[HOST]/api/register?player_name=quoc-bot&registration_key=1234
 ```
 
-**Response Example: **
+**Response Example:**
 
 ```
 {
@@ -104,13 +104,13 @@ http://[HOST]/api/register?player_name=quoc-bot&registration_key=1234
 
 `5`: Cannot start a new game: player_id does not exist, is not active, or has too many active games
 
-**Request Example: **
+**Request Example:**
 
 ```
 http://[HOST]/api/start?player_id=-1319687248
 ```
 
-**Response Example: **
+**Response Example:**
 
 ```
 {
@@ -163,13 +163,13 @@ http://[HOST]/api/start?player_id=-1319687248
 
 `5`: Invalid guess: game_token does not match an active game
 
-**Request Example (first guess): **
+**Request Example (first guess):**
 
 ```
 http://[HOST]/api/guess?game_token=812232609&guess=grace
 ```
 
-**Response Example (first guess): **
+**Response Example (first guess):**
 
 ```
 {
@@ -187,13 +187,13 @@ http://[HOST]/api/guess?game_token=812232609&guess=grace
 ```
 
 
-**Request Example (won game): **
+**Request Example (won game):**
 
 ```
 http://[HOST]/api/guess?game_token=812232609&guess=gourd
 ```
 
-**Response Example (won game): **
+**Response Example (won game):**
 
 ```
 {
@@ -240,7 +240,7 @@ If you do something that the server does not like, it will return an Error Objec
 
 `request_query`: JSON object of the query parameters of the original API request
 
-**Request Example (invalid guess): **
+**Request Example (invalid guess):**
 
 ```
 http://[HOST]/api/guess?game_token=812232609&guess=alsdsfldf
