@@ -1,15 +1,16 @@
+const functions = require("./functions");
+
 module.exports = {
     /**
-     * Add a new registration key
-     * @param {string} registration_key 
+     * Generate a new registration key
      * @param {number} limit 
      * @param {string} notes 
-     * @returns {boolean}
+     * @returns {string} registration_key
      */
-     add_registration_key: async function (registration_key, limit, notes = "") {
+     new_registration_key: async function (limit = 5, notes = "") {
         return new Promise((resolve) => {
             new_key = {
-                key: registration_key,
+                key: functions.random_string(8),
                 limit: limit,
                 notes: notes
             }
@@ -19,7 +20,7 @@ module.exports = {
                 dbo.collection(config.mongo.registration_keys_collection).insertOne(new_key, function(err, mongo_result) {
                     if (err) {throw err;}
                     db.close();
-                    resolve(true);
+                    resolve(new_key);
                 });
             });
         });

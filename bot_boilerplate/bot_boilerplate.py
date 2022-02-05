@@ -25,7 +25,7 @@ def play_game (server_url, player_id):
 
     if ("error" in new_game):
             print(new_game)
-            return
+            return(False)
 
     game_token = new_game["game_token"]
     this_guess = guess_word(game_state) # first guess
@@ -41,7 +41,7 @@ def play_game (server_url, player_id):
 
         if ("error" in this_round):
             print(this_round)
-            return
+            return(False)
         
         if (this_round["won"]): # the game is won: exit loop
             print("won in " + str(len(this_round["guesses"])))
@@ -50,6 +50,8 @@ def play_game (server_url, player_id):
         else: # prepare guess for next loop
             game_state = update_game_state(game_state, this_round["feedback"])
             this_guess = guess_word(game_state)
+
+    return(True)
 
 # importing word lists and letters
 valid_guesses = open("./bot_examples/valid_guesses.csv", "r").readlines()
@@ -65,4 +67,5 @@ new_player = json.loads(new_player) # now it's a python dict
 print(new_player)
 
 for i in range(100):
-    play_game(server_url, new_player["player_id"])
+    if (not play_game(server_url, new_player["player_id"])):
+        break # stop the loop if the function throws an error

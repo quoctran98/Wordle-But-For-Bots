@@ -51,5 +51,22 @@ module.exports = {
     // stolen from https://stackoverflow.com/questions/29544371/finding-the-average-of-an-array-using-js
     array_mean: function (array) {
         return(array.reduce((a, b) => a + b) / array.length);
+    },
+
+    /**
+     * Generate a random alphanumeric string
+     * @param {number} string_length
+     * @returns {string}
+     */
+    // stolen from https://www.kindacode.com/article/how-to-easily-generate-a-random-string-in-node-js/
+    random_string: function (string_length) {
+        const chars = "AaBbCcDdEeFfGgHhIiJjKkLlMmNnOoPpQqRrSsTtUuVvWwXxYyZz1234567890";
+        const randomArray = Array.from(
+          { length: string_length },
+          (v, k) => chars[Math.floor(Math.random() * chars.length)]
+        );
+      
+        const randomString = randomArray.join("");
+        return randomString;
     }
 }

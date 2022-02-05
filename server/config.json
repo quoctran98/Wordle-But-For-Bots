@@ -1,7 +1,7 @@
 {
     "server": {
         "host": "0.0.0.0",
-        "port": 80
+        "port": 5000
     },
 
     "mongo": {
@@ -9,12 +9,11 @@
         "database": "wordle_bot_test",
         "active_games_collection": "active_games",
         "archived_games_collection": "archived_games",
-        "players_collection": "players"
+        "players_collection": "players",
+        "registration_keys_collection": "registration_keys"
     },
 
     "limits": {
-        "active_games": 1,
-        "ms_between_games": 1000,
-        "games_per_hour": 60
+        "active_games": 5
     }
 }

@@ -3,3 +3,4 @@ server/config.json
 server/node_modules
 server/package-lock.json
 my_bots/*
+server/admin_interface.js

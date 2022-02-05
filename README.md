@@ -8,7 +8,9 @@ If a server is already set up, these are instructions on how to play. All action
 
 ### Registering a new player (or bot)
 
-In the code everything refers to a "player" but I envision these to be bots. Each person (not player!) will be given a `registration_key` which can register a certain number of "players" or bots. The documentation and code will refer to these as players going forward.
+In the code everything refers to a "player" but I envision these to be bots. Each person (not player/bot) will be given a `registration_key` which can register a certain number of "players" or bots. The documentation and code will refer to these as players going forward. 
+
+Each `registration_key` can have a certain number of `active` players. Players by default are active, but can deactivated in order to register new players.
 
 Registration of a new player requires an GET request to the path `/api/register` with a `player_name`, which can be any string, and `registration_key` filled out in the `?query` component. The server will respond with with a JSON object of the player's data.
 
@@ -38,7 +40,7 @@ RESPONSE:
 
 ### Starting a new Wordle game
 
-To start a new game make GET request to the path `/api/start` with your `player_id`. The server will respond with the game's JSON object. 
+To start a new game make GET request to the path `/api/start` with your `player_id`. The server will respond with the game's JSON object. Each `player_id` can only have a certain number of active games (the default is 5). The active games must be completed before a new one can be started.
 
 The `game_token` will be used to make future guesses. The `guesses`, `feedback`, and `guess_times` arrays will be filled with the guesses made, the Wordle feedback, and the Unix timestamps, respectively, of guesses as they are made. The `won` or `forfeit` status will be set to `true` when the game has either been won or forfeited.
 
@@ -69,9 +71,9 @@ RESPONSE:
 
 A guess for a particular game is made as a GET request to the path `/api/guess` with the `game_token` and `guess`. The server will respond with a JSON object of the game's current state including an array in `feedback` with the Wordle feedback of the guess. 
 
-The list of valid solutions are in `/server/valid_solutions.csv` and the list of valid words to guess are in `/server/valid_guesses.csv`. Keep in mind that the two lists of words do not intersect. You are allowed to guess words from both lists but only words in the valid solutions list will be solutions. Don't try to guess a word that's not in either list -- I don't know how the API will respond.
+The list of valid solutions are in `/server/valid_solutions.csv` and the list of valid words to guess are in `/server/valid_guesses.csv`. Keep in mind that the two lists of words do not intersect. You are allowed to guess words from both lists but only words in the valid solutions list will be solutions. An invalid guess will result in an error.
 
-In this array, a `2` corresponds to a green square or the letter being in the word and in the right position, a `1` corresponds to a yellow square or the letter being in the word but in the wrong spot, and a `0` corresponds to a gray square or the letter not being in the word at all (for words with double letters, I implemented the same feedback rules as the original Wordle game according to [this website](https://nerdschalk.com/wordle-same-letter-twice-rules-explained-how-does-it-work/)).
+In this array, a `2` corresponds to a green square or the letter being in the word and in the right position. A `1` corresponds to a yellow square or the letter being in the word but in the wrong spot. A `0` corresponds to a gray square or the letter not being in the word at all (for words with double letters, I implemented the same feedback rules as the original Wordle game according to [this website](https://nerdschalk.com/wordle-same-letter-twice-rules-explained-how-does-it-work/)).
 
 Here is an example request to guess the word "grace" on the previously created game with `game_token=812232609` and `guess=grace` :
 

@@ -1,5 +1,3 @@
-const games_database = require('./functions/games_database.js');
-
 global.fs = require('fs');
 global.path = require('path');
 global.express = require("express");
@@ -292,7 +290,3 @@ valid_solutions = valid_solutions.slice(1);
 valid_guesses = valid_guesses.concat(valid_solutions);
 
 app.listen(process.env.PORT || 5000);
-
-// use these lines when not deploying with heroku
-//app.listen(config.server.port); // localhost deployment
-//app.listen(config.server.port, config.server.host); // port forwarded deployment
