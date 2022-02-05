@@ -62,12 +62,17 @@ module.exports = {
                 const dbo = db.db(config.mongo.database);
                 dbo.collection(config.mongo.players_collection).findOne({player_id: player_id})
                 .then(function (this_player) {
-                    this_player.active = false;
-                    dbo.collection(config.mongo.players_collection).replaceOne({player_id: player_id}, this_player)
-                    .then(function () {
+                    if (this_player === null) { // player does not exist
                         db.close();
-                        resolve(this_player);
-                    });
+                        resolve(false);
+                    } else {
+                        this_player.active = false;
+                        dbo.collection(config.mongo.players_collection).replaceOne({player_id: player_id}, this_player)
+                        .then(function () {
+                            db.close();
+                            resolve(this_player);
+                        });
+                    }
                 });
             });
         });
@@ -95,7 +100,7 @@ module.exports = {
                                 resolve(this_player);
                             });
                         } else {
-                            resolve(this_player);
+                            resolve(false);
                         }
                     });
                 });

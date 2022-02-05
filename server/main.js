@@ -1,5 +1,3 @@
-const players_database = require('./functions/players_database.js');
-
 global.fs = require('fs');
 global.path = require('path');
 global.express = require("express");
@@ -49,7 +47,11 @@ const error_messages = {
     5: "Cannot start a new game: player_id does not exist, is not active, or has too many active games",
     6: "Invalid guess: game_token does not match an active game",
     7: "Invalid registration: player_name must be unique",
-    8: "player_name does not exist"
+    8: "player_name does not exist",
+    9: "Cannot reactivate player: registration_key has too many active players",
+    10: "Cannot deactivate player: player_id does not exist",
+    11: "Cannot find active game: game_token does not exist or is not active",
+    12: "No active games can be found for that player_id"
 }
 
 class Error {
@@ -225,6 +227,11 @@ app.get("/api/find_all_active_games", function (req, res) {
 
     games_database.search_active_games(player_id)
     .then(function (all_games) {
+        if (all_games.len == 0) {
+            res.send(new Error(12, req));
+            return;
+        }
+
         all_cleaned_games = [];
         all_games.forEach(function (this_game) { // we have to clean these objects for active games
             delete this_game._id;
@@ -245,6 +252,10 @@ app.get("/api/find_active_game", function (req, res) {
 
     games_database.find_game(game_token)
     .then(function(this_game) {
+        if (this_game == null) {
+            res.send(new Error(11, req));
+            return;
+        }
         let cleaned_game_object = this_game;
         delete cleaned_game_object._id;
         delete cleaned_game_object.word;
@@ -285,7 +296,13 @@ app.get("/api/deactivate", function (req, res) {
     }
 
     players_database.deactivate(player_id)
-    .then(this_player => res.send(this_player));
+    .then((this_player) => {
+        if (this_player == false) {
+            res.send(new Error(10, req));
+            return;
+        } 
+        res.send(this_player);
+    });
 });
 
 
@@ -298,22 +315,27 @@ app.get("/api/reactivate", function (req, res) {
     }
 
     players_database.reactivate(player_id)
-    .then(this_player => res.send(this_player));
+    .then((this_player) => {
+        if (this_player == false) {
+            res.send(new Error(9, req));
+            return;
+        } 
+        res.send(this_player);
+    });
 });
 
-// importing config and word lists
+// importing config file -- I don't really use Heroku's process.env stuff except for PORT
 global.config = fs.readFileSync(path.join(__dirname, "config.json"));
 config = JSON.parse(config);
 
+// importing word lsits
+// original valid_guesses list are allowed guesses that aren't solutions
+// the two sets dont intersect so i concat them into valid_guesses
 global.valid_guesses = fs.readFileSync("valid_guesses.csv", "utf8");
 valid_guesses = valid_guesses.split(/\r?\n/).slice(1);
-
 global.valid_solutions = fs.readFileSync("valid_solutions.csv", "utf8");
 valid_solutions = valid_solutions.split(/\r?\n/);
 valid_solutions = valid_solutions.slice(1);
-
-// original valid_guesses list are allowed guesses that aren't solutions
-// the two sets dont intersect
 valid_guesses = valid_guesses.concat(valid_solutions);
 
 app.listen(process.env.PORT || 5000);
