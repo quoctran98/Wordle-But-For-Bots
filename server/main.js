@@ -1,3 +1,5 @@
+const games_database = require('./functions/games_database.js');
+
 global.fs = require('fs');
 global.path = require('path');
 global.express = require("express");
@@ -44,7 +46,8 @@ const error_messages = {
     2: "Insufficient parameters supplied in API request",
     3: "Invalid registration: registration_key does not exist or has too many registered players",
     4: "Invalid guess: word is not in either valid_guesses.csv or valid_solutions.csv",
-    5: "Cannot start a new game: player_id does not exist, is not active, or has too many active games"
+    5: "Cannot start a new game: player_id does not exist, is not active, or has too many active games",
+    6: "Invalid guess: game_token does not match an active game"
 }
 
 class Error {
@@ -134,39 +137,41 @@ app.get("/api/guess", function (req, res) {
     }
 
     games_database.find_game(game_token).then(function(this_game) {
-        if (this_game.won || this_game.forfeit) { // already won or forfeit
-            res.send(false);
+
+        if (this_game === null) { // game cannot be found
+            res.send(new Error(6, req));
+            return;
+        }
+
+        // process the game object with guess feedback 
+        let wordle_feedback = wordle.process_guess(guess, this_game.word, valid_guesses);
+        if (wordle_feedback.length == 0) { // wordle.process_guess() returns an empty array when guess is invalid
+            res.send(new Error(4, req));
+            return;
+        }
+        
+        this_game.guesses.push(guess);
+        this_game.guess_times.push(Date.now());
+        this_game.feedback.push(wordle_feedback);
+
+        // the game is won: archive, then send back the whole game object
+        if (functions.array_equals(wordle_feedback, [2,2,2,2,2])) {
+            this_game.won = true;
+            score.save_score(this_game);
+            games_database.archive_game(this_game).then(function() {
+                let cleaned_game_object = this_game;
+                delete cleaned_game_object._id;
+                res.send(cleaned_game_object);
+            })
+
+        // keep guessing: save, then send back the cleaned game object without the solution
         } else {
-            // process the game object with guess feedback 
-            let wordle_feedback = wordle.process_guess(guess, this_game.word, valid_guesses);
-            if (wordle_feedback.length == 0) {
-                res.send(new Error(4, req));
-                return;
-            }
-            
-            this_game.guesses.push(guess);
-            this_game.guess_times.push(Date.now());
-            this_game.feedback.push(wordle_feedback);
-
-            // the game is won: archive, then send back the whole game object
-            if (functions.array_equals(wordle_feedback, [2,2,2,2,2])) {
-                this_game.won = true;
-                score.save_score(this_game);
-                games_database.archive_game(this_game).then(function() {
-                    let cleaned_game_object = this_game;
-                    delete cleaned_game_object._id;
-                    res.send(cleaned_game_object);
-                })
-
-            // keep guessing: save, then send back the cleaned game object without the solution
-            } else {
-                games_database.save_game(this_game).then(function () {
-                    let cleaned_game_object = this_game;
-                    delete cleaned_game_object._id;
-                    delete cleaned_game_object.word;
-                    res.send(cleaned_game_object);
-                });
-            }
+            games_database.save_game(this_game).then(function () {
+                let cleaned_game_object = this_game;
+                delete cleaned_game_object._id;
+                delete cleaned_game_object.word;
+                res.send(cleaned_game_object);
+            });
         }
     });
 });
@@ -286,8 +291,8 @@ valid_solutions = valid_solutions.slice(1);
 // the two sets dont intersect
 valid_guesses = valid_guesses.concat(valid_solutions);
 
-//app.listen(process.env.PORT || 5000);
+app.listen(process.env.PORT || 5000);
 
 // use these lines when not deploying with heroku
-app.listen(4431); // for local
-//app.listen(config.server.port, config.server.host); // for public hosting
+//app.listen(config.server.port); // localhost deployment
+//app.listen(config.server.port, config.server.host); // port forwarded deployment
