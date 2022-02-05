@@ -31,7 +31,7 @@ def play_game (server_url, player_id):
     # if there's an error, print it and exit the function -- returning False will also exit the loop
     if ("error" in new_game):
             print(new_game)
-            return(False)
+            exit()
 
     game_token = new_game["game_token"] # game_token is unique to this game and used to play it
     this_guess = guess_word(game_state) # first guess is made on the default game_state
@@ -48,17 +48,15 @@ def play_game (server_url, player_id):
 
         if ("error" in this_round):
             print(this_round)
-            return(False)
+            exit()
         
         if (this_round["won"]): # the game is won: exit loop
             print("won in " + str(len(this_round["guesses"])))
             won_game = True
-            return            
+            
         else: # prepare guess for next loop
             game_state = update_game_state(game_state, this_round["feedback"])
             this_guess = guess_word(game_state)
-
-    return(True)
 
 # importing word lists and creating a list of letters
 # keep in mind that the sets of words in valid_guesses and valid_solutions do not intersect
@@ -78,7 +76,7 @@ print(new_player)
 # play 100 games of wordle if registration works
 if ("error" in new_player):
     print(new_player)
+    exit()
 else:
     for i in range(100):
-        if (not play_game(server_url, new_player["player_id"])):
-            break # stop the loop if the function throws an error
+        play_game(server_url, new_player["player_id"])
