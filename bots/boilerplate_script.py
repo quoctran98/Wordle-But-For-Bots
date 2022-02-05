@@ -7,6 +7,8 @@ bot_name = ""
 registration_key = ""
 
 def update_game_state (game_state, feedback):
+    # feedback is an array with a number for each letter/position:
+    # 2 is a green square, 1 is a yellow square, 0 is a gray square 
     # write a function here
     return(game_state)
 

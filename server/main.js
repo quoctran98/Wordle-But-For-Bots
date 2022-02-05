@@ -1,3 +1,5 @@
+const players_database = require('./functions/players_database.js');
+
 global.fs = require('fs');
 global.path = require('path');
 global.express = require("express");
@@ -45,7 +47,9 @@ const error_messages = {
     3: "Invalid registration: registration_key does not exist or has too many registered players",
     4: "Invalid guess: word is not in either valid_guesses.csv or valid_solutions.csv",
     5: "Cannot start a new game: player_id does not exist, is not active, or has too many active games",
-    6: "Invalid guess: game_token does not match an active game"
+    6: "Invalid guess: game_token does not match an active game",
+    7: "Invalid registration: player_name must be unique",
+    8: "player_name does not exist"
 }
 
 class Error {
@@ -59,6 +63,7 @@ class Error {
 }
 
 // serve the entire pages folder (html and js) as the home page
+// i don't know how it knows to server index.html first
 app.use('', express.static(path.join(__dirname, 'pages')));
 
 // leaderboard data for html
@@ -71,12 +76,26 @@ app.get("/data/leaderboard", function (req, res) {
 
 // individual player data for html
 app.get("/data/player", function (req, res) {
-    const player_id = req.query.player_id;
-    
-    score.compile_scores()
-    .then(function(leaderboard) {
-        res.send(leaderboard);
+    const player_name = req.query.player_name;
+
+    mongoClient.connect(config.mongo.url, {useUnifiedTopology: true}, function (err, db) {
+        if (err) {throw err;}
+        const dbo = db.db(config.mongo.database);
+        dbo.collection(config.mongo.players_collection).findOne({player_name: player_name})
+        .then(function (this_player) {
+            db.close();
+            if (this_player == null) {
+                res.send(new Error(8, req));
+                return
+            }
+
+            delete this_player._id;
+            delete this_player.player_id;
+            delete this_player.registration_key;
+            res.send(this_player);
+        });
     });
+
 });
 
 // HTTP GET for registering a player
@@ -88,14 +107,22 @@ app.get("/api/register", function (req, res) {
         return;
     }
     
-    players_database.check_registration_key(registration_key)
-    .then(function (is_allowed) {
-        if (is_allowed) {
-            players_database.register_player(new Player(player_name, registration_key))
-            .then(new_player => res.send(new_player));
-        } else {
-            res.send(new Error(3, req));
-        } 
+    players_database.duplicate_name(player_name)
+    .then((is_duplicate) => {
+        if (is_duplicate) {
+            res.send(new Error(7, req));
+            return;
+        }
+
+        players_database.check_registration_key(registration_key)
+        .then(function (is_allowed) {
+            if (is_allowed) {
+                players_database.register_player(new Player(player_name, registration_key))
+                .then(new_player => res.send(new_player));
+            } else {
+                res.send(new Error(3, req));
+            } 
+    });
     });
 });
 

@@ -1,30 +1,59 @@
 # About
 
-This is [Wordle](https://www.powerlanguage.co.uk/wordle/) but built for bots to compete against each other.
+This is an API server for people to build bots that [Wordle](https://www.powerlanguage.co.uk/wordle/) to pit those bots against each other. The server hosts a leaderboard of average guesses taken by each bot to solve a Wordle. Each bot competes by making API calls to the server.
 
-# How To Play
+# Quick Start Guide
 
-If a server is already set up, these are instructions on how to play. All actions are performed through an HTTP GET request to the server at `http://[HOST]:[PORT]` with the syntax `http://[HOST]:[PORT]/[PATH]?[QUERY]`
+The easiest way to get started is to use the boilerplate Python script in `/bots/boilerplate_script.py`. To play you will need to have access to a server hosing Wordle-But-For-Bots at `[HOST]` and a `registration_key` from that server.
+
+The boilerplate Python script is set up to register a bot (referred to as a "player" in most of the code) and play 100 games of Wordle with the server. To use the script fill out the fields for `server_url`, `bot_name`, and `registration_key`. You'll also need to define a `game_state` object, write a function to `update_game_state`, and one to `guess_word` based on that game state.
+
+# API Documentation
+
+All actions are performed through an HTTP GET request to the server at `http://[HOST]` with the syntax `http://[HOST]/[PATH]?[QUERY_PARAM_1]=[QUERY_VALUE_1]&[QUERY_PARAM_2]=[QUERY_VALUE_2]`
 
 ### Registering a new player (or bot)
 
-In the code everything refers to a "player" but I envision these to be bots. Each person (not player/bot) will be given a `registration_key` which can register a certain number of "players" or bots. The documentation and code will refer to these as players going forward. 
+GET Request Path: `/api/register`
 
-Each `registration_key` can have a certain number of `active` players. Players by default are active, but can deactivated in order to register new players.
+Query Parametrs:
 
-Registration of a new player requires an GET request to the path `/api/register` with a `player_name`, which can be any string, and `registration_key` filled out in the `?query` component. The server will respond with with a JSON object of the player's data.
+`registration_key`: an alphanumeric string supplied by the server
 
-The `scores` and `score_times` arrays will be filled with the scores and the Unix timestamps, respectively, of games as they are played.
+`player_name`: any unique string to name the bot (also referred to as a player)
 
-Here is an example request to register a player with the `player_name=quoc-bot` and `registration_key=1234`:
+JSON Response Attributes:
 
-REQUEST: 
+`time_registered`: Unix timestamp of when the registration was processed
+
+`player_id`: a (secret) number used to start games and perform other operations
+
+`registration_key`: the key used to register this player
+
+`player_name`: the name assigned to this player
+
+`scores`: an array to be filled with scores of finished games
+
+`score_times`: an array to be filled with the Unix timestamps of finished games
+
+`active`: a boolean value -- all players are active by default. Each `registration_key` can have a certain number of `active` bots. These bots can be deactivated to register more bots and reactivated at a later date.
+
+Errors:
+
+`2`: Insufficient parameters supplied in API request
+
+`3`: Invalid registration: registration_key does not exist or has too many registered players
+
+`7`: Invalid registration: player_name must be unique
+
+
+Request Example: 
 
 ```
-http://[HOST]:[PORT]/api/register?player_name=quoc-bot&registration_key=1234
+http://[HOST]/api/register?player_name=quoc-bot&registration_key=1234
 ```
 
-RESPONSE: 
+Response Example: 
 
 ```
 {
@@ -40,19 +69,43 @@ RESPONSE:
 
 ### Starting a new Wordle game
 
-To start a new game make GET request to the path `/api/start` with your `player_id`. The server will respond with the game's JSON object. Each `player_id` can only have a certain number of active games (the default is 5). The active games must be completed before a new one can be started.
+GET Request Path: `/api/start`
 
-The `game_token` will be used to make future guesses. The `guesses`, `feedback`, and `guess_times` arrays will be filled with the guesses made, the Wordle feedback, and the Unix timestamps, respectively, of guesses as they are made. The `won` or `forfeit` status will be set to `true` when the game has either been won or forfeited.
+Query Parametrs:
 
-Here is an example request for the previously registered player to start a new game with `player_id=-1319687248`:
+`player_id`: the id of the player starting the game
 
-REQUEST: 
+JSON Response Attributes:
+
+`time_started`: Unix timestamp of when the game was started
+
+`player_id`: the id of the player who started this game
+
+`game_token`: the unique token used to continue playing this game. This token is a hash ([specifically this one](http://werxltd.com/wp/2010/05/13/javascript-implementation-of-javas-string-hashcode-method/)) of the concatenation of the solution word, `player_id`, and `time_started`.
+
+`guesses`: an array of valid guesses made
+
+`feedback`: an array of feedback on guesses made. Each position in the array corresponds to a letter in the word guessed. A `2` is a green square: the letter is in the word in that postion. A `1` is a yellow square: the letter is in the word but not in that position. A `0` is a gray square: the letter is not in the word at all. Double letter rules should be implemented the same as Wordle's, according to [this website](https://nerdschalk.com/wordle-same-letter-twice-rules-explained-how-does-it-work/).
+
+`guess_times`: an array of Unix timestamps of when each guess was processed
+
+`won`: boolean -- won games are scored archived and can no longer be played
+
+`forfeit`: boolean -- forfeiting games is not yet implemented
+
+Errors:
+
+`2`: Insufficient parameters supplied in API request
+
+`5`: Cannot start a new game: player_id does not exist, is not active, or has too many active games
+
+Request Example: 
 
 ```
-http://[HOST]:[PORT]/api/start?player_id=-1319687248
+http://[HOST]/api/start?player_id=-1319687248
 ```
 
-RESPONSE: 
+Response Example: 
 
 ```
 {
@@ -69,21 +122,39 @@ RESPONSE:
 
 ### Making a guess
 
-A guess for a particular game is made as a GET request to the path `/api/guess` with the `game_token` and `guess`. The server will respond with a JSON object of the game's current state including an array in `feedback` with the Wordle feedback of the guess. 
+GET Request Path: `/api/guess`
 
-The list of valid solutions are in `/server/valid_solutions.csv` and the list of valid words to guess are in `/server/valid_guesses.csv`. Keep in mind that the two lists of words do not intersect. You are allowed to guess words from both lists but only words in the valid solutions list will be solutions. An invalid guess will result in an error.
+Query Parametrs:
 
-In this array, a `2` corresponds to a green square or the letter being in the word and in the right position. A `1` corresponds to a yellow square or the letter being in the word but in the wrong spot. A `0` corresponds to a gray square or the letter not being in the word at all (for words with double letters, I implemented the same feedback rules as the original Wordle game according to [this website](https://nerdschalk.com/wordle-same-letter-twice-rules-explained-how-does-it-work/)).
+`game_token`: the token of the game being played
 
-Here is an example request to guess the word "grace" on the previously created game with `game_token=812232609` and `guess=grace` :
+`guess`: the word being guessed. The list of valid Wordle solutions and guesses, respectively, are in `/server/valid_solutions.csv` and `/server/valid_guesses.csv`. Keep in mind that the two lists of words do not intersect. Words from both lists can be gussed.
 
-REQUEST: 
+JSON Response Attributes:
+
+`time_started`: Unix timestamp of when the game was started
+
+`player_id`: the id of the player who started this game
+
+`game_token`: the unique token used to continue playing this game
+
+`guesses`: an array of valid guesses made
+
+`feedback`: an array of feedback on guesses made
+
+`guess_times`: an array of Unix timestamps of when each guess was processed
+
+`won`: boolean -- won games are scored archived and can no longer be played
+
+`forfeit`: boolean -- forfeiting games is not yet implemented
+
+Request Example (first guess): 
 
 ```
-http://[HOST]:[PORT]/api/guess?game_token=812232609&guess=grace
+http://[HOST]/api/guess?game_token=812232609&guess=grace
 ```
 
-RESPONSE: 
+Response Example (first guess): 
 
 ```
 {
@@ -100,15 +171,14 @@ RESPONSE:
 }
 ```
 
-If the game has been won, the server will respond with the game object, with the last guess accounted for in the `guesses`, `feedback`, and `guess_times` arrays. The solution will be revealed in the `word` attribute and the `won` attribute will be set to `true`. The game's score will be saved and the game will no longer be accessible.
 
-REQUEST: 
+Request Example (won game): 
 
 ```
-http://[HOST]:[PORT]/api/guess?game_token=812232609&guess=gourd
+http://[HOST]/api/guess?game_token=812232609&guess=gourd
 ```
 
-RESPONSE: 
+Response Example (won game): 
 
 ```
 {
@@ -125,6 +195,15 @@ RESPONSE:
     "won":true,
     "forfeit":false
 }
+
+Errors:
+
+`2`: Insufficient parameters supplied in API request
+
+`4`: Invalid guess: word is not in either valid_guesses.csv or valid_solutions.csv
+
+`5`: Invalid guess: game_token does not match an active game
+
 ```
 ### Other useful API calls
 
@@ -142,13 +221,25 @@ RESPONSE:
 
 If you do something that the server does not like, it will return an error object with an error message and your original request.
 
-REQUEST: 
+JSON Error Response Attributes:
+
+`error`: boolean -- this attribute will only appear on error messages
+
+`code`: the error code
+
+`message`: message describing the error
+
+`request_path`:  path of the original API request
+
+`request_query`: JSON object of the query parameters of the original API request
+
+Request Example (invalid guess): 
 
 ```
-http://[HOST]:[PORT]/api/guess?game_token=812232609&guess=alsdsfldf
+http://[HOST]/api/guess?game_token=812232609&guess=alsdsfldf
 ```
 
-RESPONSE:
+Response Example (invalid guess):
 
 ```
 {

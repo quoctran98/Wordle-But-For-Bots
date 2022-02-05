@@ -6,7 +6,7 @@ module.exports = {
      * @returns {number} number of times val appears in arr
      */
     // stolen from https://www.codegrepper.com/code-examples/javascript/javascript+count+number+of+occurrences+in+array
-     countOccurrences: function (arr, val) {
+    countOccurrences: function (arr, val) {
         return(arr.reduce((a, v) => (v === val ? a + 1 : a), 0))
     },
 

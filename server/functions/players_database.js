@@ -136,5 +136,27 @@ module.exports = {
                 });
             });
         });
-     }
+     },
+
+    /**
+     * Checks if a player_name already exists
+     * @param {string} player_name 
+     * @returns {boolean}
+     */
+     duplicate_name: async function (player_name) {
+        return new Promise((resolve) => {
+            mongoClient.connect(config.mongo.url, {useUnifiedTopology: true}, function (err, db) {
+                if (err) {throw err;}
+                const dbo = db.db(config.mongo.database);
+                dbo.collection(config.mongo.players_collection).findOne({player_name: player_name})
+                .then(function (this_player) {
+                    if (this_player == null) {
+                        resolve(false);
+                    } else {
+                        resolve(true);
+                    }
+                });
+            });
+        });
+    },
 }

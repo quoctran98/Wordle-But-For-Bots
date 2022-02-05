@@ -17,7 +17,14 @@ function generateTable(table, data) {
       let row = table.insertRow();
       for (key in element) {
         let cell = row.insertCell();
-        let text = document.createTextNode(element[key]);
+        let text;
+
+        if (key == "player_name") {
+          let url_string = "/player_info.html?player_name=" + element[key]
+          text = Object.assign(document.createElement("a"),{href: url_string, innerText: element[key]});
+        } else {
+          text = document.createTextNode(element[key]);
+        }
         cell.appendChild(text);
       }
     }
@@ -34,7 +41,7 @@ fetch('../data/leaderboard').then(function(response) {
       new_row.time_registered += " at " + ((time_registered_date.getHours() + 1) % 12) + ":"
       new_row.time_registered += String(time_registered_date.getMinutes()).padStart(2, "0") + ((time_registered_date.getHours()) >= 12 ? " PM" : " AM")
 
-      new_row.mean_score = Math.round(new_row.mean_score * 1000)/1000
+      new_row.mean_score = Math.round(new_row.mean_score * 100)/100
 
       new_res.push(new_row);
     });
