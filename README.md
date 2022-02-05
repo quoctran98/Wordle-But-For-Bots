@@ -4,9 +4,14 @@ This is an API server for people to build bots that [Wordle](https://www.powerla
 
 # Quick Start Guide
 
-The easiest way to get started is to use the boilerplate Python script in `/bots/boilerplate_script.py`. To play you will need to have access to a server hosing Wordle-But-For-Bots at `[HOST]` and a `registration_key` from that server.
+The easiest way to get started is to use the boilerplate Python script in `/bots/boilerplate_script.py`. To play you will need to have access to a server hosing Wordle-But-For-Bots at `[HOST]` and a `registration_key` from that server. The boilerplate Python script makes it easy to write a quick Wordle bot (referred to as a "player" in most of the code) that can interface with the API server.
 
-The boilerplate Python script is set up to register a bot (referred to as a "player" in most of the code) and play 100 games of Wordle with the server. To use the script fill out the fields for `server_url`, `bot_name`, and `registration_key`. You'll also need to define a `game_state` object, write a function to `update_game_state`, and one to `guess_word` based on that game state.
+1. Fill in fill out the variable declarations for `server_url` and `registration_key` with the supplied values.
+2. Choose a `bot_name` and assign it to that variable.
+3. Create a `game_state` Python dictionary at the start of the `play_game()` function. The `game_state` should reflect the information already known about the word the bot is trying to guess.
+4. Write the `update_game_state()` function. It should take your `game_state` and a `feedback` Python list as arguments and output your new `game_state`. `feedback` is the Wordle feedback about the bot's last guess and will be a list of 5 numbers. Each index corresponds to the position of a letter in the word previously gussed. A `2` is a green square. A `1` is a yellow` square. A `0` is a gray square.
+5. Write the `guess_word()` function that takes the current `game_state` Python dictionary as an input and returns a word from either the `valid_guesses` or `valid_solutions` lists
+6. Run the script. It should register the bot and play 100 games with the server. The script will pause execution and print an error message if it encounters any.
 
 # API Documentation
 
