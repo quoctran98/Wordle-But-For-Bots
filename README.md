@@ -19,15 +19,15 @@ All actions are performed through an HTTP GET request to the server at `http://[
 
 ### Registering a new player (or bot)
 
-GET Request Path: `/api/register`
+**GET Request Path:** `/api/register`
 
-Query Parametrs:
+**Query Parametrs:**
 
 `registration_key`: an alphanumeric string supplied by the server
 
 `player_name`: any unique string to name the bot (also referred to as a player)
 
-JSON Response Attributes:
+**"Player Object" JSON Response Attributes:**
 
 `time_registered`: Unix timestamp of when the registration was processed
 
@@ -43,7 +43,7 @@ JSON Response Attributes:
 
 `active`: a boolean value -- all players are active by default. Each `registration_key` can have a certain number of `active` bots. These bots can be deactivated to register more bots and reactivated at a later date.
 
-Errors:
+**Errors:**
 
 `2`: Insufficient parameters supplied in API request
 
@@ -52,13 +52,13 @@ Errors:
 `7`: Invalid registration: player_name must be unique
 
 
-Request Example: 
+**Request Example: **
 
 ```
 http://[HOST]/api/register?player_name=quoc-bot&registration_key=1234
 ```
 
-Response Example: 
+**Response Example: **
 
 ```
 {
@@ -74,13 +74,13 @@ Response Example:
 
 ### Starting a new Wordle game
 
-GET Request Path: `/api/start`
+**GET Request Path:** `/api/start`
 
-Query Parametrs:
+**Query Parametrs:**
 
 `player_id`: the id of the player starting the game
 
-JSON Response Attributes:
+**"Game Object" JSON Response Attributes:**
 
 `time_started`: Unix timestamp of when the game was started
 
@@ -98,19 +98,19 @@ JSON Response Attributes:
 
 `forfeit`: boolean -- forfeiting games is not yet implemented
 
-Errors:
+**Errors:**
 
 `2`: Insufficient parameters supplied in API request
 
 `5`: Cannot start a new game: player_id does not exist, is not active, or has too many active games
 
-Request Example: 
+**Request Example: **
 
 ```
 http://[HOST]/api/start?player_id=-1319687248
 ```
 
-Response Example: 
+**Response Example: **
 
 ```
 {
@@ -127,15 +127,15 @@ Response Example:
 
 ### Making a guess
 
-GET Request Path: `/api/guess`
+**GET Request Path:** `/api/guess`
 
-Query Parametrs:
+**Query Parametrs:**
 
 `game_token`: the token of the game being played
 
 `guess`: the word being guessed. The list of valid Wordle solutions and guesses, respectively, are in `/server/valid_solutions.csv` and `/server/valid_guesses.csv`. Keep in mind that the two lists of words do not intersect. Words from both lists can be gussed.
 
-JSON Response Attributes:
+**"Game Object" JSON Response Attributes:**
 
 `time_started`: Unix timestamp of when the game was started
 
@@ -153,13 +153,23 @@ JSON Response Attributes:
 
 `forfeit`: boolean -- forfeiting games is not yet implemented
 
-Request Example (first guess): 
+**NOTE: there is no six guess limit -- the bot should guess until it has won**
+
+**Errors:**
+
+`2`: Insufficient parameters supplied in API request
+
+`4`: Invalid guess: word is not in either valid_guesses.csv or valid_solutions.csv
+
+`5`: Invalid guess: game_token does not match an active game
+
+**Request Example (first guess): **
 
 ```
 http://[HOST]/api/guess?game_token=812232609&guess=grace
 ```
 
-Response Example (first guess): 
+**Response Example (first guess): **
 
 ```
 {
@@ -177,13 +187,13 @@ Response Example (first guess):
 ```
 
 
-Request Example (won game): 
+**Request Example (won game): **
 
 ```
 http://[HOST]/api/guess?game_token=812232609&guess=gourd
 ```
 
-Response Example (won game): 
+**Response Example (won game): **
 
 ```
 {
@@ -201,32 +211,24 @@ Response Example (won game):
     "forfeit":false
 }
 
-Errors:
-
-`2`: Insufficient parameters supplied in API request
-
-`4`: Invalid guess: word is not in either valid_guesses.csv or valid_solutions.csv
-
-`5`: Invalid guess: game_token does not match an active game
-
 ```
 ### Other useful API calls
 
-`/api/find_all_archived_games` takes the argument `player_id` and will return an array game objects for archived games for that player
+`/api/find_all_archived_games` takes the argument `player_id` and will return an array archived (won or forfeited) Game Objects for that player
 
-`/api/find_all_active_games` takes the argument `player_id` and will return an array of game objects for active games for that player
+`/api/find_all_active_games` takes the argument `player_id` and will return an array of Game Objects for active games for that player
 
-`/api/find_active_game` takes the argument `game_token` and returns the game object of the corresponding game without modifying it
+`/api/find_active_game` takes the argument `game_token` and returns the Game Object of the corresponding game without modifying it
 
-`/api/deactivate` takes the argument `player_id` and will set that player's active status to `false` and returns the player object
+`/api/deactivate` takes the argument `player_id` and will set that player's active status to `false` and returns the Player Object
 
-`/api/reactivate` takes the argument `player_id` and will set that player's active status to `true` if the registration key's limit has not been reached but returns the player object in either case
+`/api/reactivate` takes the argument `player_id` and will set that player's active status to `true` if the registration key's limit has not been reached and returns the Player Object if successful
 
 ### Error handling
 
-If you do something that the server does not like, it will return an error object with an error message and your original request.
+If you do something that the server does not like, it will return an Error Object with an error message and your original request.
 
-JSON Error Response Attributes:
+**Error Object JSON Response Attributes:**
 
 `error`: boolean -- this attribute will only appear on error messages
 
@@ -238,13 +240,13 @@ JSON Error Response Attributes:
 
 `request_query`: JSON object of the query parameters of the original API request
 
-Request Example (invalid guess): 
+**Request Example (invalid guess): **
 
 ```
 http://[HOST]/api/guess?game_token=812232609&guess=alsdsfldf
 ```
 
-Response Example (invalid guess):
+**Response Example (invalid guess):**
 
 ```
 {
