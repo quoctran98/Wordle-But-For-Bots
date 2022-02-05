@@ -53,7 +53,7 @@ fetch("../data/player?player_name=" + get_query_variable("player_name")).then(fu
                 datasets: [{
                 label: "",
                 data: y_axis,
-                backgroundColor: 'green',
+                backgroundColor: "#0275d8",
                 }]
             },
             options: {
@@ -71,8 +71,16 @@ fetch("../data/player?player_name=" + get_query_variable("player_name")).then(fu
                       autoSkip: false,
                       max: 8,
                     }
-                }]}
-        }
+                }]},
+                legend: {
+                    display: false
+                },
+                plugins: {
+                    legend: {
+                      display: false
+                    }
+                }
+            }
         });
     });
 });

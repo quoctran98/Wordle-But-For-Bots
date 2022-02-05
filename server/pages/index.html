@@ -43,189 +43,166 @@
         <div class="col-md-8", id="markdown_div">
 
 
-          <h1 id="about">
-            <a class="anchor" href="#about"></a>About
-            </h1>
-            <p>This is an API server for people to build bots that <a href="https://www.powerlanguage.co.uk/wordle/">Wordle</a> to pit those bots against each other. The server hosts a leaderboard of average guesses taken by each bot to solve a Wordle. Each bot competes by making API calls to the server.</p>
-            <h1 id="quick-start-guide">
-            <a class="anchor" href="#quick-start-guide"></a>Quick Start Guide
-            </h1>
-            <p>The easiest way to get started is to use the boilerplate Python script in <code>/bots/boilerplate_script.py</code>. To play you will need to have access to a server hosing Wordle-But-For-Bots at <code>[HOST]</code> and a <code>registration_key</code> from that server.</p>
-            <p>The boilerplate Python script is set up to register a bot (referred to as a &quot;player&quot; in most of the code) and play 100 games of Wordle with the server. To use the script fill out the fields for <code>server_url</code>, <code>bot_name</code>, and <code>registration_key</code>. You'll also need to define a <code>game_state</code> object, write a function to <code>update_game_state</code>, and one to <code>guess_word</code> based on that game state.</p>
-            <h1 id="api-documentation">
-            <a class="anchor" href="#api-documentation"></a>API Documentation
-            </h1>
-            <p>All actions are performed through an HTTP GET request to the server at <code>http://[HOST]</code> with the syntax <code>http://[HOST]/[PATH]?[QUERY_PARAM_1]=[QUERY_VALUE_1]&amp;[QUERY_PARAM_2]=[QUERY_VALUE_2]</code></p>
-            <h3 id="registering-a-new-player-or-bot">
-            <a class="anchor" href="#registering-a-new-player-or-bot"></a>Registering a new player (or bot)
-            </h3>
-            <p>GET Request Path: <code>/api/register</code></p>
-            <p>Query Parametrs:</p>
-            <p><code>registration_key</code>: an alphanumeric string supplied by the server</p>
-            <p><code>player_name</code>: any unique string to name the bot (also referred to as a player)</p>
-            <p>JSON Response Attributes:</p>
-            <p><code>time_registered</code>: Unix timestamp of when the registration was processed</p>
-            <p><code>player_id</code>: a (secret) number used to start games and perform other operations</p>
-            <p><code>registration_key</code>: the key used to register this player</p>
-            <p><code>player_name</code>: the name assigned to this player</p>
-            <p><code>scores</code>: an array to be filled with scores of finished games</p>
-            <p><code>score_times</code>: an array to be filled with the Unix timestamps of finished games</p>
-            <p><code>active</code>: a boolean value -- all players are active by default. Each <code>registration_key</code> can have a certain number of <code>active</code> bots. These bots can be deactivated to register more bots and reactivated at a later date.</p>
-            <p>Errors:</p>
-            <p><code>2</code>: Insufficient parameters supplied in API request</p>
-            <p><code>3</code>: Invalid registration: registration_key does not exist or has too many registered players</p>
-            <p><code>7</code>: Invalid registration: player_name must be unique</p>
-            <p>Request Example:</p>
-            <pre><code>
-            http://[HOST]/api/register?player_name=quoc-bot&amp;registration_key=1234
-            </code></pre>
-            <p>Response Example:</p>
-            <pre><code>
-            {
-                &quot;time_registered&quot;:1643677248826,
-                &quot;player_id&quot;:-1319687248,
-                &quot;registration_key&quot;:1234,
-                &quot;player_name&quot;:&quot;quoc-bot&quot;,
-                &quot;scores&quot;:[],
-                &quot;score_times&quot;:[],
-                &quot;active&quot;:true
-            }
-            </code></pre>
-            <h3 id="starting-a-new-wordle-game">
-            <a class="anchor" href="#starting-a-new-wordle-game"></a>Starting a new Wordle game
-            </h3>
-            <p>GET Request Path: <code>/api/start</code></p>
-            <p>Query Parametrs:</p>
-            <p><code>player_id</code>: the id of the player starting the game</p>
-            <p>JSON Response Attributes:</p>
-            <p><code>time_started</code>: Unix timestamp of when the game was started</p>
-            <p><code>player_id</code>: the id of the player who started this game</p>
-            <p><code>game_token</code>: the unique token used to continue playing this game. This token is a hash (<a href="http://werxltd.com/wp/2010/05/13/javascript-implementation-of-javas-string-hashcode-method/">specifically this one</a>) of the concatenation of the solution word, <code>player_id</code>, and <code>time_started</code>.</p>
-            <p><code>guesses</code>: an array of valid guesses made</p>
-            <p><code>feedback</code>: an array of feedback on guesses made. Each position in the array corresponds to a letter in the word guessed. A <code>2</code> is a green square: the letter is in the word in that postion. A <code>1</code> is a yellow square: the letter is in the word but not in that position. A <code>0</code> is a gray square: the letter is not in the word at all. Double letter rules should be implemented the same as Wordle's, according to <a href="https://nerdschalk.com/wordle-same-letter-twice-rules-explained-how-does-it-work/">this website</a>.</p>
-            <p><code>guess_times</code>: an array of Unix timestamps of when each guess was processed</p>
-            <p><code>won</code>: boolean -- won games are scored archived and can no longer be played</p>
-            <p><code>forfeit</code>: boolean -- forfeiting games is not yet implemented</p>
-            <p>Errors:</p>
-            <p><code>2</code>: Insufficient parameters supplied in API request</p>
-            <p><code>5</code>: Cannot start a new game: player_id does not exist, is not active, or has too many active games</p>
-            <p>Request Example:</p>
-            <pre><code>
-            http://[HOST]/api/start?player_id=-1319687248
-            </code></pre>
-            <p>Response Example:</p>
-            <pre><code>
-            {
-                &quot;time_started&quot;:1643677266357,
-                &quot;player_id&quot;:-1319687248&quot;,
-                &quot;game_token&quot;:812232609&quot;,
-                &quot;guesses&quot;:[],
-                &quot;feedback&quot;:[],
-                &quot;guess_times&quot;:[],
-                &quot;won&quot;:false,
-                &quot;forfeit&quot;:false
-            }
-            </code></pre>
-            <h3 id="making-a-guess">
-            <a class="anchor" href="#making-a-guess"></a>Making a guess
-            </h3>
-            <p>GET Request Path: <code>/api/guess</code></p>
-            <p>Query Parametrs:</p>
-            <p><code>game_token</code>: the token of the game being played</p>
-            <p><code>guess</code>: the word being guessed. The list of valid Wordle solutions and guesses, respectively, are in <code>/server/valid_solutions.csv</code> and <code>/server/valid_guesses.csv</code>. Keep in mind that the two lists of words do not intersect. Words from both lists can be gussed.</p>
-            <p>JSON Response Attributes:</p>
-            <p><code>time_started</code>: Unix timestamp of when the game was started</p>
-            <p><code>player_id</code>: the id of the player who started this game</p>
-            <p><code>game_token</code>: the unique token used to continue playing this game</p>
-            <p><code>guesses</code>: an array of valid guesses made</p>
-            <p><code>feedback</code>: an array of feedback on guesses made</p>
-            <p><code>guess_times</code>: an array of Unix timestamps of when each guess was processed</p>
-            <p><code>won</code>: boolean -- won games are scored archived and can no longer be played</p>
-            <p><code>forfeit</code>: boolean -- forfeiting games is not yet implemented</p>
-            <p>Request Example (first guess):</p>
-            <pre><code>
-            http://[HOST]/api/guess?game_token=812232609&amp;guess=grace
-            </code></pre>
-            <p>Response Example (first guess):</p>
-            <pre><code>
-            {
-                &quot;time_started&quot;:1643677266357,
-                &quot;player_id&quot;:-1319687248&quot;,
-                &quot;game_token&quot;:812232609&quot;,
-                &quot;guesses&quot;:[&quot;grace&quot;],
-                &quot;feedback&quot;:[
-                    [2,1,0,0,0]
-                ],
-                &quot;guess_times&quot;:[1643677269940],
-                &quot;won&quot;:false,
-                &quot;forfeit&quot;:false
-            }
-            </code></pre>
-            <p>Request Example (won game):</p>
-            <pre><code>
-            http://[HOST]/api/guess?game_token=812232609&amp;guess=gourd
-            </code></pre>
-            <p>Response Example (won game):</p>
-            <pre><code>
-            {
-                &quot;word&quot;:&quot;gourd&quot;,
-                &quot;time_started&quot;:1643677266357,
-                &quot;player_id&quot;:-1319687248&quot;,
-                &quot;game_token&quot;:812232609&quot;,
-                &quot;guesses&quot;:[&quot;grace&quot;, &quot;gourd&quot;],
-                &quot;feedback&quot;:[
-                    [2,1,0,0,0],
-                    [2,2,2,2,2]
-                ],
-                &quot;guess_times&quot;:[1643677269940, 1643677270917],
-                &quot;won&quot;:true,
-                &quot;forfeit&quot;:false
-            }
-            
-            Errors:
-            
-            `2`: Insufficient parameters supplied in API request
-            
-            `4`: Invalid guess: word is not in either valid_guesses.csv or valid_solutions.csv
-            
-            `5`: Invalid guess: game_token does not match an active game
-            
-            </code></pre>
-            <h3 id="other-useful-api-calls">
-            <a class="anchor" href="#other-useful-api-calls"></a>Other useful API calls
-            </h3>
-            <p><code>/api/find_all_archived_games</code> takes the argument <code>player_id</code> and will return an array game objects for archived games for that player</p>
-            <p><code>/api/find_all_active_games</code> takes the argument <code>player_id</code> and will return an array of game objects for active games for that player</p>
-            <p><code>/api/find_active_game</code> takes the argument <code>game_token</code> and returns the game object of the corresponding game without modifying it</p>
-            <p><code>/api/deactivate</code> takes the argument <code>player_id</code> and will set that player's active status to <code>false</code> and returns the player object</p>
-            <p><code>/api/reactivate</code> takes the argument <code>player_id</code> and will set that player's active status to <code>true</code> if the registration key's limit has not been reached but returns the player object in either case</p>
-            <h3 id="error-handling">
-            <a class="anchor" href="#error-handling"></a>Error handling
-            </h3>
-            <p>If you do something that the server does not like, it will return an error object with an error message and your original request.</p>
-            <p>JSON Error Response Attributes:</p>
-            <p><code>error</code>: boolean -- this attribute will only appear on error messages</p>
-            <p><code>code</code>: the error code</p>
-            <p><code>message</code>: message describing the error</p>
-            <p><code>request_path</code>:  path of the original API request</p>
-            <p><code>request_query</code>: JSON object of the query parameters of the original API request</p>
-            <p>Request Example (invalid guess):</p>
-            <pre><code>
-            http://[HOST]/api/guess?game_token=812232609&amp;guess=alsdsfldf
-            </code></pre>
-            <p>Response Example (invalid guess):</p>
-            <pre><code>
-            {
-                &quot;error&quot;:true,
-                &quot;code&quot;:4,
-                &quot;message&quot;:&quot;Invalid guess: word is not in either valid_guesses.csv or valid_solutions.csv&quot;,
-                &quot;request_path&quot;:&quot;/api/guess&quot;,
-                &quot;request_query&quot;:{
-                    &quot;guess&quot;:&quot;alsdsfldf&quot;,
-                    &quot;game_token&quot;:&quot;812232609&quot;
-                }
-            }
-            </code></pre>        
+          <h1 id="about">About</h1>
+<p>This is an API server for people to build bots that <a href="https://www.powerlanguage.co.uk/wordle/">Wordle</a> to pit those bots against each other. The server hosts a leaderboard of average guesses taken by each bot to solve a Wordle. Each bot competes by making API calls to the server.</p>
+<h1 id="quick-start-guide">Quick Start Guide</h1>
+<p>The easiest way to get started is to use the boilerplate Python script in <code>/bots/boilerplate_script.py</code>. To play you will need to have access to a server hosing Wordle-But-For-Bots at <code>[HOST]</code> and a <code>registration_key</code> from that server. The boilerplate Python script makes it easy to write a quick Wordle bot (referred to as a &quot;player&quot; in most of the code) that can interface with the API server.</p>
+<ol>
+<li>Fill in fill out the variable declarations for <code>server_url</code> and <code>registration_key</code> with the supplied values.</li>
+<li>Choose a <code>bot_name</code> and assign it to that variable.</li>
+<li>Create a <code>game_state</code> Python dictionary at the start of the <code>play_game()</code> function. The <code>game_state</code> should reflect the information already known about the word the bot is trying to guess.</li>
+<li>Write the <code>update_game_state()</code> function. It should take your <code>game_state</code> and a <code>feedback</code> Python list as arguments and output your new <code>game_state</code>. <code>feedback</code> is the Wordle feedback about the bot&#39;s last guess and will be a list of 5 numbers. Each index corresponds to the position of a letter in the word previously gussed. A <code>2</code> is a green square. A <code>1</code> is a yellow<code>square. A</code>0` is a gray square.</li>
+<li>Write the <code>guess_word()</code> function that takes the current <code>game_state</code> Python dictionary as an input and returns a word from either the <code>valid_guesses</code> or <code>valid_solutions</code> lists</li>
+<li>Run the script. It should register the bot and play 100 games with the server. The script will pause execution and print an error message if it encounters any.</li>
+</ol>
+<h1 id="api-documentation">API Documentation</h1>
+<p>All actions are performed through an HTTP GET request to the server at <code>http://[HOST]</code> with the syntax <code>http://[HOST]/[PATH]?[QUERY_PARAM_1]=[QUERY_VALUE_1]&amp;[QUERY_PARAM_2]=[QUERY_VALUE_2]</code></p>
+<h3 id="registering-a-new-player-or-bot">Registering a new player (or bot)</h3>
+<p><strong>GET Request Path:</strong> <code>/api/register</code></p>
+<p><strong>Query Parametrs:</strong></p>
+<p><code>registration_key</code>: an alphanumeric string supplied by the server</p>
+<p><code>player_name</code>: any unique string to name the bot (also referred to as a player)</p>
+<p><strong>&quot;Player Object&quot; JSON Response Attributes:</strong></p>
+<p><code>time_registered</code>: Unix timestamp of when the registration was processed</p>
+<p><code>player_id</code>: a (secret) number used to start games and perform other operations</p>
+<p><code>registration_key</code>: the key used to register this player</p>
+<p><code>player_name</code>: the name assigned to this player</p>
+<p><code>scores</code>: an array to be filled with scores of finished games</p>
+<p><code>score_times</code>: an array to be filled with the Unix timestamps of finished games</p>
+<p><code>active</code>: a boolean value -- all players are active by default. Each <code>registration_key</code> can have a certain number of <code>active</code> bots. These bots can be deactivated to register more bots and reactivated at a later date.</p>
+<p><strong>Errors:</strong></p>
+<p><code>2</code>: Insufficient parameters supplied in API request</p>
+<p><code>3</code>: Invalid registration: registration_key does not exist or has too many registered players</p>
+<p><code>7</code>: Invalid registration: player_name must be unique</p>
+<p><strong>Request Example:</strong></p>
+<pre><code>http://[HOST]/api/register?player_name=quoc-bot&amp;registration_key=1234
+</code></pre>
+<p><strong>Response Example:</strong></p>
+<pre><code>{
+    &quot;time_registered&quot;:1643677248826,
+    &quot;player_id&quot;:-1319687248,
+    &quot;registration_key&quot;:1234,
+    &quot;player_name&quot;:&quot;quoc-bot&quot;,
+    &quot;scores&quot;:[],
+    &quot;score_times&quot;:[],
+    &quot;active&quot;:true
+}
+</code></pre>
+<h3 id="starting-a-new-wordle-game">Starting a new Wordle game</h3>
+<p><strong>GET Request Path:</strong> <code>/api/start</code></p>
+<p><strong>Query Parametrs:</strong></p>
+<p><code>player_id</code>: the id of the player starting the game</p>
+<p><strong>&quot;Game Object&quot; JSON Response Attributes:</strong></p>
+<p><code>time_started</code>: Unix timestamp of when the game was started</p>
+<p><code>player_id</code>: the id of the player who started this game</p>
+<p><code>game_token</code>: the unique token used to continue playing this game. This token is a hash (<a href="http://werxltd.com/wp/2010/05/13/javascript-implementation-of-javas-string-hashcode-method/">specifically this one</a>) of the concatenation of the solution word, <code>player_id</code>, and <code>time_started</code>.</p>
+<p><code>guesses</code>: an array of valid guesses made</p>
+<p><code>feedback</code>: an array of feedback on guesses made. Each position in the array corresponds to a letter in the word guessed. A <code>2</code> is a green square: the letter is in the word in that postion. A <code>1</code> is a yellow square: the letter is in the word but not in that position. A <code>0</code> is a gray square: the letter is not in the word at all. Double letter rules should be implemented the same as Wordle&#39;s, according to <a href="https://nerdschalk.com/wordle-same-letter-twice-rules-explained-how-does-it-work/">this website</a>.</p>
+<p><code>guess_times</code>: an array of Unix timestamps of when each guess was processed</p>
+<p><code>won</code>: boolean -- won games are scored archived and can no longer be played</p>
+<p><code>forfeit</code>: boolean -- forfeiting games is not yet implemented</p>
+<p><strong>Errors:</strong></p>
+<p><code>2</code>: Insufficient parameters supplied in API request</p>
+<p><code>5</code>: Cannot start a new game: player_id does not exist, is not active, or has too many active games</p>
+<p><strong>Request Example:</strong></p>
+<pre><code>http://[HOST]/api/start?player_id=-1319687248
+</code></pre>
+<p><strong>Response Example:</strong></p>
+<pre><code>{
+    &quot;time_started&quot;:1643677266357,
+    &quot;player_id&quot;:-1319687248&quot;,
+    &quot;game_token&quot;:812232609&quot;,
+    &quot;guesses&quot;:[],
+    &quot;feedback&quot;:[],
+    &quot;guess_times&quot;:[],
+    &quot;won&quot;:false,
+    &quot;forfeit&quot;:false
+}
+</code></pre>
+<h3 id="making-a-guess">Making a guess</h3>
+<p><strong>GET Request Path:</strong> <code>/api/guess</code></p>
+<p><strong>Query Parametrs:</strong></p>
+<p><code>game_token</code>: the token of the game being played</p>
+<p><code>guess</code>: the word being guessed. The list of valid Wordle solutions and guesses, respectively, are in <code>/server/valid_solutions.csv</code> and <code>/server/valid_guesses.csv</code>. Keep in mind that the two lists of words do not intersect. Words from both lists can be gussed.</p>
+<p><strong>&quot;Game Object&quot; JSON Response Attributes:</strong></p>
+<p><code>time_started</code>: Unix timestamp of when the game was started</p>
+<p><code>player_id</code>: the id of the player who started this game</p>
+<p><code>game_token</code>: the unique token used to continue playing this game</p>
+<p><code>guesses</code>: an array of valid guesses made</p>
+<p><code>feedback</code>: an array of feedback on guesses made</p>
+<p><code>guess_times</code>: an array of Unix timestamps of when each guess was processed</p>
+<p><code>won</code>: boolean -- won games are scored archived and can no longer be played</p>
+<p><code>forfeit</code>: boolean -- forfeiting games is not yet implemented</p>
+<p><strong>NOTE: there is no six guess limit -- the bot should guess until it has won</strong></p>
+<p><strong>Errors:</strong></p>
+<p><code>2</code>: Insufficient parameters supplied in API request</p>
+<p><code>4</code>: Invalid guess: word is not in either valid_guesses.csv or valid_solutions.csv</p>
+<p><code>5</code>: Invalid guess: game_token does not match an active game</p>
+<p><strong>Request Example (first guess):</strong></p>
+<pre><code>http://[HOST]/api/guess?game_token=812232609&amp;guess=grace
+</code></pre>
+<p><strong>Response Example (first guess):</strong></p>
+<pre><code>{
+    &quot;time_started&quot;:1643677266357,
+    &quot;player_id&quot;:-1319687248&quot;,
+    &quot;game_token&quot;:812232609&quot;,
+    &quot;guesses&quot;:[&quot;grace&quot;],
+    &quot;feedback&quot;:[
+        [2,1,0,0,0]
+    ],
+    &quot;guess_times&quot;:[1643677269940],
+    &quot;won&quot;:false,
+    &quot;forfeit&quot;:false
+}
+</code></pre>
+<p><strong>Request Example (won game):</strong></p>
+<pre><code>http://[HOST]/api/guess?game_token=812232609&amp;guess=gourd
+</code></pre>
+<p><strong>Response Example (won game):</strong></p>
+<pre><code>{
+    &quot;word&quot;:&quot;gourd&quot;,
+    &quot;time_started&quot;:1643677266357,
+    &quot;player_id&quot;:-1319687248&quot;,
+    &quot;game_token&quot;:812232609&quot;,
+    &quot;guesses&quot;:[&quot;grace&quot;, &quot;gourd&quot;],
+    &quot;feedback&quot;:[
+        [2,1,0,0,0],
+        [2,2,2,2,2]
+    ],
+    &quot;guess_times&quot;:[1643677269940, 1643677270917],
+    &quot;won&quot;:true,
+    &quot;forfeit&quot;:false
+}
+</code></pre>
+<h3 id="other-useful-api-calls">Other useful API calls</h3>
+<p><code>/api/find_all_archived_games</code> takes the argument <code>player_id</code> and will return an array archived (won or forfeited) Game Objects for that player</p>
+<p><code>/api/find_all_active_games</code> takes the argument <code>player_id</code> and will return an array of Game Objects for active games for that player</p>
+<p><code>/api/find_active_game</code> takes the argument <code>game_token</code> and returns the Game Object of the corresponding game without modifying it</p>
+<p><code>/api/deactivate</code> takes the argument <code>player_id</code> and will set that player&#39;s active status to <code>false</code> and returns the Player Object</p>
+<p><code>/api/reactivate</code> takes the argument <code>player_id</code> and will set that player&#39;s active status to <code>true</code> if the registration key&#39;s limit has not been reached and returns the Player Object if successful</p>
+<h3 id="error-handling">Error handling</h3>
+<p>If you do something that the server does not like, it will return an Error Object with an error message and your original request.</p>
+<p><strong>Error Object JSON Response Attributes:</strong></p>
+<p><code>error</code>: boolean -- this attribute will only appear on error messages</p>
+<p><code>code</code>: the error code</p>
+<p><code>message</code>: message describing the error</p>
+<p><code>request_path</code>:  path of the original API request</p>
+<p><code>request_query</code>: JSON object of the query parameters of the original API request</p>
+<p><strong>Request Example (invalid guess):</strong></p>
+<pre><code>http://[HOST]/api/guess?game_token=812232609&amp;guess=alsdsfldf
+</code></pre>
+<p><strong>Response Example (invalid guess):</strong></p>
+<pre><code>{
+    &quot;error&quot;:true,
+    &quot;code&quot;:4,
+    &quot;message&quot;:&quot;Invalid guess: word is not in either valid_guesses.csv or valid_solutions.csv&quot;,
+    &quot;request_path&quot;:&quot;/api/guess&quot;,
+    &quot;request_query&quot;:{
+        &quot;guess&quot;:&quot;alsdsfldf&quot;,
+        &quot;game_token&quot;:&quot;812232609&quot;
+    }
+}
+</code></pre>
 
 
         </div>
