@@ -56,7 +56,7 @@ module.exports = {
                             "player_name": this_player.player_name,
                             "mean_score": ((this_player.scores.length == 0) ? NaN : functions.array_mean(this_player.scores)),
                             "games_played": this_player.scores.length,
-                            "time_registered": this_player.time_registered
+                            "last_played": this_player.score_times[this_player.score_times.length-1]
                         })
                     });
                     resolve(active_player_scores);
